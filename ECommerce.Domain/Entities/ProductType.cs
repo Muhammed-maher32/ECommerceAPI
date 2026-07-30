@@ -1,20 +1,26 @@
-﻿namespace ECommerce.Domain.Entities;
+﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Errors;
 
-public class ProductType : BaseEntity
+namespace ECommerce.Domain.Entities;
+
+public sealed class ProductType : BaseEntity
 {
     public string Name { get; private set; } = null!;
     public ICollection<Product> Products { get; private set; } = [];
 
     private ProductType() { }
-    public static ProductType Create(Guid id, string name)
+    public static Result<ProductType> Create(Guid id, string name)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
         if (id == Guid.Empty)
-        {
-            throw new ArgumentException("Brand id is Required", nameof(id));
-        }
+            return Result<ProductType>.Failure(ProductTypeErrors.IdRequired);
 
-        return new() { Id = id, Name = name.Trim() };
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProductType>.Failure(ProductTypeErrors.NameRequired);
+
+        return Result<ProductType>.Success(new()
+        {
+            Id = id,
+            Name = name.Trim(),
+        });
     }
 }

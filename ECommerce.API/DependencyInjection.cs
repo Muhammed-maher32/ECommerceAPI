@@ -1,10 +1,17 @@
-﻿namespace ECommerce.API;
+﻿using ECommerce.API.Middlewares;
+
+namespace ECommerce.API;
 
 public static class DependencyInjection
 {
     public static IServiceCollection AddPresentaion(this IServiceCollection services)
     {
         services.AddControllers();
+
+        services.AddProblemDetails();
+
+        services.AddExceptionHandler<GlobalExceptionMiddleware>();
+
         return services;
     }
 }
