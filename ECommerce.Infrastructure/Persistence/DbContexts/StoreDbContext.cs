@@ -1,7 +1,7 @@
 ﻿using ECommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Infrastructure.Data.DbContexts;
+namespace ECommerce.Infrastructure.Persistence.DbContexts;
 
 public class StoreDbContext(DbContextOptions<StoreDbContext> options)
     : DbContext(options)
