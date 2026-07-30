@@ -1,4 +1,5 @@
-﻿using ECommerce.Infrastructure.Data.DbContexts;
+﻿using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,11 @@ public static class DependencyInjection
             options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
             .EnableSensitiveDataLogging();
         });
+        services.AddScoped<IDataseeder, ProductBrandSeeder>();
+        services.AddScoped<IDataseeder, ProductTypeSeeder>();
+        //Since (IEnumerable<IDataseeder>seeders)
+        //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
+        services.AddScoped<DataBaseSeeder>();
         return services;
     }
 }
