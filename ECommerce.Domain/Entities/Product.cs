@@ -90,7 +90,7 @@ public sealed class Product : BaseEntity
         if (result.IsFailure)
             return result;
 
-        UpdatedAt = DateTimeOffset.UtcNow;
+        //UpdatedAt = DateTimeOffset.UtcNow;
 
         return Result.Success();
     }

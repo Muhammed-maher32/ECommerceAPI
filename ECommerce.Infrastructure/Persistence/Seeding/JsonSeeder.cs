@@ -1,4 +1,5 @@
-﻿using ECommerce.Domain.Entities;
+﻿using ECommerce.Domain.Common;
+using ECommerce.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -14,7 +15,7 @@ public static class JsonSeeder
     public static async Task SeedIfEmpty<TEntity, TModel>(
         DbSet<TEntity> dbset,
         string fileName,
-        Func<TModel, TEntity> map,
+        Func<TModel, Result<TEntity>> map,
         CancellationToken ct = default
         ) where TEntity : BaseEntity
     {
@@ -31,7 +32,20 @@ public static class JsonSeeder
 
         if (models is null || models.Count == 0) return;
 
-        var entities = models.Select(map);
+        var entities = new List<TEntity>();
+
+        foreach (var model in models)
+        {
+            var result = map(model);
+
+            if (result.IsFailure)
+            {
+                throw new InvalidOperationException(
+                     $"Invalid record '{model}' in '{fileName}'. Error: {result.Error!.Message}");
+            }
+
+            entities.Add(result.Value);
+        }
 
         await dbset.AddRangeAsync(entities, ct);
     }
