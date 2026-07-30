@@ -25,7 +25,5 @@ public class UnitOfWork(StoreDbContext dbContext) : IUnitOfWork
     }
 
     public Task<int> SaveChangesAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
+        => dbContext.SaveChangesAsync(ct);
 }
