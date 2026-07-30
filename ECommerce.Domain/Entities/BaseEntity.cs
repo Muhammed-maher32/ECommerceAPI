@@ -10,7 +10,8 @@ public abstract class BaseEntity
     public void MarkAsDeleted()
     {
         IsDeleted = true;
-        UpdatedAt = DateTimeOffset.UtcNow;
+        //UpdatedAt = DateTimeOffset.UtcNow; => set in interceptor
+
     }
 
     //Created By id, updated By Id?? when authnicate + auth and add intersiptor
