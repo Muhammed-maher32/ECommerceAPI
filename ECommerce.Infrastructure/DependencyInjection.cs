@@ -1,6 +1,8 @@
 ﻿using ECommerce.Infrastructure.Interceptors;
 using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Queries;
 using ECommerce.Infrastructure.Persistence.Seeding;
+using ECommerce.UseCases.Prdoucts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +32,7 @@ public static class DependencyInjection
         //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
         services.AddScoped<DataBaseSeeder>();
         services.AddScoped<AuditInterceptor>();
-
+        services.AddScoped<IProductQueryService, ProductQueryService>();
         return services;
     }
 }

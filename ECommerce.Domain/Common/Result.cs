@@ -27,7 +27,9 @@ public class Result
 public class Result<TValue> : Result
 {
     private readonly TValue? _value;
-    private Result(TValue? value, bool isSuccess, Error? error = null)
+    private Result(TValue? value,
+        bool isSuccess,
+        Error? error = null)
         : base(isSuccess, error)
     {
         _value = value;
@@ -42,4 +44,14 @@ public class Result<TValue> : Result
         => new Result<TValue>(value, true);
     public new static Result<TValue> Failure(Error error)
         => new Result<TValue>(default, false, error);
+
+    public TResult Match<TResult>(
+        Func<TValue, TResult> onSuccess,
+        Func<Error, TResult> onFailure)
+    {
+        return IsSuccess ? onSuccess(_value!)
+            : onFailure(Error!);
+    }
+    public static implicit operator Result<TValue>(TValue value) =>
+        Success(value);
 }
