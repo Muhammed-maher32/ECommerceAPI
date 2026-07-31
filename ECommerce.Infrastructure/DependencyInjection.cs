@@ -2,7 +2,9 @@
 using ECommerce.Infrastructure.Persistence.DbContexts;
 using ECommerce.Infrastructure.Persistence.Queries;
 using ECommerce.Infrastructure.Persistence.Seeding;
+using ECommerce.UseCases.Brands;
 using ECommerce.UseCases.Prdoucts;
+using ECommerce.UseCases.Types;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +35,8 @@ public static class DependencyInjection
         services.AddScoped<DataBaseSeeder>();
         services.AddScoped<AuditInterceptor>();
         services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddScoped<IBrandQueryService, BrandQueryService>();
+        services.AddScoped<ITypeQueryService, TypeQueryService>();
         return services;
     }
 }

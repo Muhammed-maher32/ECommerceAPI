@@ -3,11 +3,15 @@ using ECommerce.UseCases.Prdoucts.Dtos;
 
 namespace ECommerce.UseCases.Prdoucts.Queries;
 
-public sealed class GetByIdProductQuery(IProductQueryService productQueryService)
+public sealed class GetByIdProductQuery(IProductQueryService productQueryservice)
 {
-    public async Task<Result<IReadOnlyList<GetAllProductsResponse>>> ExecuteAsync()
+    public async Task<Result<GetByIdProductResponse>> ExecuteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var products = await productQueryService.GetAllProductsAsync();
-        return Result<IReadOnlyList<GetAllProductsResponse>>.Success(products);
+        var product = await productQueryservice.GetByIdProductAsync(id, cancellationToken);
+
+        if (product is null)
+            return Result<GetByIdProductResponse>.Failure(ProductErrors.NotFound);
+
+        return product;
     }
 }
