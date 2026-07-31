@@ -1,0 +1,1850 @@
+﻿
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.API\Middlewares\GlobalExceptionMiddleware.cs
+==================================================
+using Microsoft.AspNetCore.Diagnostics;
+
+namespace ECommerce.API.Middlewares;
+
+public class GlobalExceptionMiddleware(IProblemDetailsService problemDetailsService,
+    ILogger<GlobalExceptionMiddleware> logger) : IExceptionHandler
+{
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    {
+        logger.LogError(exception, "Unhandled exception");
+
+        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+        var problemDetailsContext = new ProblemDetailsContext
+        {
+            HttpContext = httpContext,
+            Exception = exception,
+            ProblemDetails = new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "Internal Server Error",
+                Detail = "An Unexpected Error. Try Again Later."
+            }
+        };
+        return await problemDetailsService.TryWriteAsync(problemDetailsContext);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.API\DependencyInjection.cs
+==================================================
+using ECommerce.API.Middlewares;
+
+namespace ECommerce.API;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddPresentaion(this IServiceCollection services)
+    {
+        services.AddControllers();
+
+        services.AddProblemDetails();
+
+        services.AddExceptionHandler<GlobalExceptionMiddleware>();
+
+        return services;
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.API\Program.cs
+==================================================
+using ECommerce.API;
+using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Seeding;
+using ECommerce.UseCases;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddPresentaion();
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
+builder.Services.AddApplication();
+
+
+var app = builder.Build();
+
+app.UseExceptionHandler();
+
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+
+    var dbseed = scope.ServiceProvider.GetRequiredService<DataBaseSeeder>();
+
+    var dbContext = scope.ServiceProvider.GetRequiredService<StoreDbContext>();
+
+    await dbContext.Database.MigrateAsync();
+
+    await dbseed.SeedAll();
+}
+app.Run();
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Common\Error.cs
+==================================================
+using ECommerce.Domain.Common;
+
+public sealed record Error(string Code, string Message, ErrorType Type)
+{
+    public static Error Validation(string code, string message)
+        => new(code, message, ErrorType.Validation);
+
+    public static Error NotFound(string code, string message)
+        => new(code, message, ErrorType.NotFound);
+
+    public static Error Conflict(string code, string message)
+        => new(code, message, ErrorType.Conflict);
+
+    public static Error Unauthorized(string code, string message)
+        => new(code, message, ErrorType.UnAuthorized);
+
+    public static Error Forbidden(string code, string message)
+        => new(code, message, ErrorType.ForBidden);
+
+    public static Error Failure(string code, string message)
+        => new(code, message, ErrorType.Failure);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Common\ErrorType.cs
+==================================================
+namespace ECommerce.Domain.Common;
+
+public enum ErrorType
+{
+    Validation = 1,
+    NotFound = 2,
+    Conflict = 3,
+    UnAuthorized = 4,
+    ForBidden = 5,
+    Failure = 6,
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Common\Result.cs
+==================================================
+namespace ECommerce.Domain.Common;
+
+public class Result
+{
+    protected Result(bool isSuccess, Error? error = null)
+    {
+        if (isSuccess && error is not null)
+            throw new InvalidOperationException("Success cannot has an error.");
+
+        if (!isSuccess && error is null)
+            throw new InvalidOperationException("Success must has an error.");
+
+        IsSuccess = isSuccess;
+        Error = error;
+    }
+    public bool IsSuccess { get; }
+    public Error? Error { get; }
+    public bool IsFailure => !IsSuccess;
+
+
+    public static Result Success()
+        => new Result(true);
+    public static Result Failure(Error error)
+        => new Result(false, error);
+}
+
+public class Result<TValue> : Result
+{
+    private readonly TValue? _value;
+    private Result(TValue? value,
+        bool isSuccess,
+        Error? error = null)
+        : base(isSuccess, error)
+    {
+        _value = value;
+    }
+
+    public TValue Value =>
+        IsSuccess
+            ? _value!
+            : throw new InvalidOperationException(
+                "Cannot access the value of a failed result.");
+    public static Result<TValue> Success(TValue value)
+        => new Result<TValue>(value, true);
+    public new static Result<TValue> Failure(Error error)
+        => new Result<TValue>(default, false, error);
+
+    public TResult Match<TResult>(
+        Func<TValue, TResult> onSuccess,
+        Func<Error, TResult> onFailure)
+    {
+        return IsSuccess ? onSuccess(_value!)
+            : onFailure(Error!);
+    }
+    public static implicit operator Result<TValue>(TValue value) =>
+        Success(value);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Entities\BaseEntity.cs
+==================================================
+namespace ECommerce.Domain.Entities;
+
+public abstract class BaseEntity
+{
+    public Guid Id { get; protected set; }
+    public DateTimeOffset CreatedAt { get; protected set; }
+    public DateTimeOffset? UpdatedAt { get; protected set; }
+    public bool IsDeleted { get; private set; }
+
+    public void MarkAsDeleted()
+    {
+        IsDeleted = true;
+        //UpdatedAt = DateTimeOffset.UtcNow; => set in interceptor
+
+    }
+
+    //Created By id, updated By Id?? when authnicate + auth and add intersiptor
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Entities\Product.cs
+==================================================
+using ECommerce.Domain.Common;
+
+namespace ECommerce.Domain.Entities;
+
+public sealed class Product : BaseEntity
+{
+    public const int MaxNameLength = 100;
+    public const int MaxDescriptionLength = 1000;
+    public const int MaxPictureUrlLength = 500;
+
+    public string Name { get; private set; } = null!;
+    public string Description { get; private set; } = null!;
+    public string PictureUrl { get; private set; } = null!;
+    public decimal Price { get; private set; }
+
+    public Guid ProductBrandId { get; private set; }
+    public ProductBrand ProductBrand { get; private set; } = null!;
+
+    public Guid ProductTypeId { get; private set; }
+    public ProductType ProductType { get; private set; } = null!;
+
+    private Product() { }
+
+    public static Result<Product> Create(
+        string name,
+        string description,
+        string pictureUrl,
+        decimal price,
+        Guid productBrandId,
+        Guid productTypeId)
+    {
+        var product = new Product();
+
+        var result = product.SetName(name);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        result = product.SetDescription(description);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        result = product.SetPictureUrl(pictureUrl);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        result = product.SetPrice(price);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        result = product.SetBrand(productBrandId);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        result = product.SetType(productTypeId);
+        if (result.IsFailure)
+            return Result<Product>.Failure(result.Error!);
+
+        return Result<Product>.Success(product);
+    }
+
+    public Result Update(
+        string name,
+        string description,
+        string pictureUrl,
+        decimal price,
+        Guid productBrandId,
+        Guid productTypeId)
+    {
+        var result = SetName(name);
+        if (result.IsFailure)
+            return result;
+
+        result = SetDescription(description);
+        if (result.IsFailure)
+            return result;
+
+        result = SetPictureUrl(pictureUrl);
+        if (result.IsFailure)
+            return result;
+
+        result = SetPrice(price);
+        if (result.IsFailure)
+            return result;
+
+        result = SetBrand(productBrandId);
+        if (result.IsFailure)
+            return result;
+
+        result = SetType(productTypeId);
+        if (result.IsFailure)
+            return result;
+
+        //UpdatedAt = DateTimeOffset.UtcNow;
+
+        return Result.Success();
+    }
+
+    private Result SetName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return Result.Failure(ProductErrors.NameRequired);
+
+        name = name.Trim();
+
+        if (name.Length > MaxNameLength)
+            return Result.Failure(ProductErrors.NameTooLong);
+
+        Name = name;
+
+        return Result.Success();
+    }
+
+    private Result SetDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return Result.Failure(ProductErrors.DescriptionRequired);
+
+        description = description.Trim();
+
+        if (description.Length > MaxDescriptionLength)
+            return Result.Failure(ProductErrors.DescriptionTooLong);
+
+        Description = description;
+
+        return Result.Success();
+    }
+
+    private Result SetPictureUrl(string pictureUrl)
+    {
+        if (string.IsNullOrWhiteSpace(pictureUrl))
+            return Result.Failure(ProductErrors.PictureUrlRequired);
+
+        pictureUrl = pictureUrl.Trim();
+
+        if (pictureUrl.Length > MaxPictureUrlLength)
+            return Result.Failure(ProductErrors.PictureUrlTooLong);
+
+        PictureUrl = pictureUrl;
+
+        return Result.Success();
+    }
+
+    private Result SetPrice(decimal price)
+    {
+        if (price <= 0)
+            return Result.Failure(ProductErrors.InvalidPrice);
+
+        Price = price;
+
+        return Result.Success();
+    }
+
+    private Result SetBrand(Guid productBrandId)
+    {
+        if (productBrandId == Guid.Empty)
+            return Result.Failure(ProductErrors.BrandRequired);
+
+        ProductBrandId = productBrandId;
+
+        return Result.Success();
+    }
+
+    private Result SetType(Guid productTypeId)
+    {
+        if (productTypeId == Guid.Empty)
+            return Result.Failure(ProductErrors.TypeRequired);
+
+        ProductTypeId = productTypeId;
+
+        return Result.Success();
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Entities\ProductBrand.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.Domain.Errors;
+
+namespace ECommerce.Domain.Entities;
+
+public sealed class ProductBrand : BaseEntity
+{
+    public string Name { get; private set; } = null!;
+    public ICollection<Product> Products { get; private set; } = [];
+
+    private ProductBrand() { }
+
+    public static Result<ProductBrand> Create(Guid id, string name)
+    {
+        if (id == Guid.Empty)
+            return Result<ProductBrand>.Failure(ProductBrandErrors.IdRequired);
+
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProductBrand>.Failure(ProductBrandErrors.NameRequired);
+
+        return Result<ProductBrand>.Success(new()
+        {
+            Id = id,
+            Name = name.Trim()
+        });
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Entities\ProductType.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.Domain.Errors;
+
+namespace ECommerce.Domain.Entities;
+
+public sealed class ProductType : BaseEntity
+{
+    public string Name { get; private set; } = null!;
+    public ICollection<Product> Products { get; private set; } = [];
+
+    private ProductType() { }
+    public static Result<ProductType> Create(Guid id, string name)
+    {
+        if (id == Guid.Empty)
+            return Result<ProductType>.Failure(ProductTypeErrors.IdRequired);
+
+        if (string.IsNullOrWhiteSpace(name))
+            return Result<ProductType>.Failure(ProductTypeErrors.NameRequired);
+
+        return Result<ProductType>.Success(new()
+        {
+            Id = id,
+            Name = name.Trim(),
+        });
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Errors\ProductBrandErrors.cs
+==================================================
+namespace ECommerce.Domain.Errors;
+
+public class ProductBrandErrors
+{
+    public static readonly Error NotFound =
+        Error.NotFound(
+            "ProductBrand.NotFound",
+            "Product brand was not found.");
+
+    public static readonly Error IdRequired =
+        Error.Validation(
+            "ProductBrand.Id.Required",
+            "Product brand id is required.");
+
+    public static readonly Error NameRequired =
+        Error.Validation(
+            "ProductBrand.Name.Required",
+            "Product brand name is required.");
+
+    public static readonly Error NameAlreadyExists =
+        Error.Conflict(
+            "ProductBrand.Name.AlreadyExists",
+            "A product brand with this name already exists.");
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Errors\ProductErrors.cs
+==================================================
+using ECommerce.Domain.Entities;
+
+public static class ProductErrors
+{
+    public static readonly Error NotFound =
+        Error.NotFound(
+            "Product.NotFound",
+            "Product was not found.");
+
+    public static readonly Error NameRequired =
+        Error.Validation(
+            "Product.Name.Required",
+            "Product name is required.");
+
+    public static readonly Error NameTooLong =
+        Error.Validation(
+            "Product.Name.TooLong",
+            $"Product name cannot exceed {Product.MaxNameLength} characters.");
+
+    public static readonly Error NameAlreadyExists =
+        Error.Conflict(
+            "Product.Name.AlreadyExists",
+            "A product with this name already exists.");
+
+    public static readonly Error DescriptionRequired =
+        Error.Validation(
+            "Product.Description.Required",
+            "Product description is required.");
+
+    public static readonly Error DescriptionTooLong =
+        Error.Validation(
+            "Product.Description.TooLong",
+            $"Product description cannot exceed {Product.MaxDescriptionLength} characters.");
+
+    public static readonly Error PictureUrlRequired =
+        Error.Validation(
+            "Product.PictureUrl.Required",
+            "Picture URL is required.");
+
+    public static readonly Error PictureUrlTooLong =
+        Error.Validation(
+            "Product.PictureUrl.TooLong",
+            $"Picture URL cannot exceed {Product.MaxPictureUrlLength} characters.");
+
+    public static readonly Error InvalidPrice =
+        Error.Validation(
+            "Product.Price.Invalid",
+            "Price must be greater than zero.");
+
+    public static readonly Error BrandRequired =
+        Error.Validation(
+            "Product.Brand.Required",
+            "A product brand is required.");
+
+    public static readonly Error TypeRequired =
+        Error.Validation(
+            "Product.Type.Required",
+            "A product type is required.");
+
+    public static readonly Error Deleted =
+        Error.Conflict(
+            "Product.Deleted",
+            "The product has been deleted.");
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Errors\ProductTypeErrors.cs
+==================================================
+namespace ECommerce.Domain.Errors;
+
+public class ProductTypeErrors
+{
+    public static readonly Error NotFound =
+        Error.NotFound(
+            "ProductType.NotFound",
+            "Product type was not found.");
+
+    public static readonly Error IdRequired =
+        Error.Validation(
+            "ProductType.Id.Required",
+            "Product type id is required.");
+
+    public static readonly Error NameRequired =
+        Error.Validation(
+            "ProductType.Name.Required",
+            "Product type name is required.");
+
+    public static readonly Error NameAlreadyExists =
+        Error.Conflict(
+            "ProductType.Name.AlreadyExists",
+            "A product type with this name already exists.");
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Repositories\IRepository.cs
+==================================================
+using ECommerce.Domain.Entities;
+
+namespace ECommerce.Domain.Repositories;
+
+public interface IRepository<T> where T : BaseEntity
+{
+    Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default);
+
+    void Add(T entity);
+
+    void Update(T entity);
+
+    void Delete(T entity);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Domain\Repositories\IUnitOfWork.cs
+==================================================
+using ECommerce.Domain.Entities;
+
+namespace ECommerce.Domain.Repositories;
+
+public interface IUnitOfWork
+{
+    IRepository<T> Repository<T>() where T : BaseEntity;
+
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Interceptors\AuditInterceptor.cs
+==================================================
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace ECommerce.Infrastructure.Interceptors;
+
+public class AuditInterceptor : SaveChangesInterceptor
+{
+    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+
+    {
+        var context = eventData.Context;
+
+        if (context is null)
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+
+        var entries = context.ChangeTracker.Entries<BaseEntity>()
+            .Where(e => e.State == EntityState.Added ||
+            e.State == EntityState.Modified);
+
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var entry in entries)
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Property(x => x.CreatedAt).CurrentValue = now;
+            }
+            else
+            {
+                entry.Property(x => x.UpdatedAt).CurrentValue = now;
+            }
+        }
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Migrations\20260730133525_IntialCreate.cs
+==================================================
+using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace ECommerce.Infrastructure.Migrations
+{
+    /// <inheritdoc />
+    public partial class IntialCreate : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "Brands",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Brands", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Types",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Types", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    PictureUrl = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                    ProductBrandId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProductTypeId = table.Column<Guid>(type: "uuid", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Products_Brands_ProductBrandId",
+                        column: x => x.ProductBrandId,
+                        principalTable: "Brands",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Products_Types_ProductTypeId",
+                        column: x => x.ProductTypeId,
+                        principalTable: "Types",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Brands_Name",
+                table: "Brands",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Description",
+                table: "Products",
+                column: "Description");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Name",
+                table: "Products",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Price",
+                table: "Products",
+                column: "Price");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ProductBrandId",
+                table: "Products",
+                column: "ProductBrandId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_ProductTypeId",
+                table: "Products",
+                column: "ProductTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Types_Name",
+                table: "Types",
+                column: "Name",
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Brands");
+
+            migrationBuilder.DropTable(
+                name: "Types");
+        }
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Migrations\20260730133525_IntialCreate.Designer.cs
+==================================================
+// <auto-generated />
+using System;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
+
+namespace ECommerce.Infrastructure.Migrations
+{
+    [DbContext(typeof(StoreDbContext))]
+    [Migration("20260730133525_IntialCreate")]
+    partial class IntialCreate
+    {
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PictureUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ProductBrandId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Description");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Price");
+
+                    b.HasIndex("ProductBrandId");
+
+                    b.HasIndex("ProductTypeId");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductBrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Types");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("ECommerce.Domain.Entities.ProductBrand", "ProductBrand")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductBrandId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ECommerce.Domain.Entities.ProductType", "ProductType")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ProductBrand");
+
+                    b.Navigation("ProductType");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductBrand", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductType", b =>
+                {
+                    b.Navigation("Products");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Migrations\StoreDbContextModelSnapshot.cs
+==================================================
+// <auto-generated />
+using System;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+
+#nullable disable
+
+namespace ECommerce.Infrastructure.Migrations
+{
+    [DbContext(typeof(StoreDbContext))]
+    partial class StoreDbContextModelSnapshot : ModelSnapshot
+    {
+        protected override void BuildModel(ModelBuilder modelBuilder)
+        {
+#pragma warning disable 612, 618
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PictureUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ProductBrandId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Description");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Price");
+
+                    b.HasIndex("ProductBrandId");
+
+                    b.HasIndex("ProductTypeId");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductBrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Brands");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Types");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("ECommerce.Domain.Entities.ProductBrand", "ProductBrand")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductBrandId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ECommerce.Domain.Entities.ProductType", "ProductType")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductTypeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ProductBrand");
+
+                    b.Navigation("ProductType");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductBrand", b =>
+                {
+                    b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ECommerce.Domain.Entities.ProductType", b =>
+                {
+                    b.Navigation("Products");
+                });
+#pragma warning restore 612, 618
+        }
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Configurations\ProductBrandConfiguration.cs
+==================================================
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace ECommerce.Infrastructure.Persistence.Configurations;
+
+public class ProductBrandConfiguration
+    : IEntityTypeConfiguration<ProductBrand>
+{
+    public void Configure(EntityTypeBuilder<ProductBrand> builder)
+    {
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.HasIndex(x => x.Name)
+            .IsUnique();
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Configurations\ProductConfiguration.cs
+==================================================
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace ECommerce.Infrastructure.Persistence.Configurations;
+
+public class ProductConfiguration
+    : IEntityTypeConfiguration<Product>
+{
+    public void Configure(EntityTypeBuilder<Product> builder)
+    {
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.Property(x => x.Description)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        builder.Property(x => x.PictureUrl)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        builder.Property(x => x.Price)
+            .HasPrecision(18, 2);
+
+        builder.HasOne(x => x.ProductBrand)
+            .WithMany(p => p.Products)
+            .HasForeignKey(x => x.ProductBrandId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(x => x.ProductType)
+            .WithMany(p => p.Products)
+            .HasForeignKey(x => x.ProductTypeId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        //if i search with name || description || Price
+        builder.HasIndex(x => x.Name);
+        builder.HasIndex(x => x.Description);
+        builder.HasIndex(x => x.Price);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Configurations\ProductTypeConfiguration.cs
+==================================================
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace ECommerce.Infrastructure.Persistence.Configurations;
+
+public class ProductTypeConfiguration
+    : IEntityTypeConfiguration<ProductType>
+{
+    public void Configure(EntityTypeBuilder<ProductType> builder)
+    {
+        builder.Property(x => x.Name)
+            .IsRequired()
+            .HasMaxLength(200);
+
+        builder.HasIndex(x => x.Name)
+            .IsUnique();
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\DbContexts\StoreDbContext.cs
+==================================================
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+
+namespace ECommerce.Infrastructure.Persistence.DbContexts;
+
+public class StoreDbContext(DbContextOptions<StoreDbContext> options)
+    : DbContext(options)
+{
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductBrand> Brands => Set<ProductBrand>();
+    public DbSet<ProductType> Types => Set<ProductType>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
+
+        ApplySoftDeleteQueryFilter(modelBuilder);
+    }
+
+    private static void ApplySoftDeleteQueryFilter(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            var clrType = entityType.ClrType;
+
+            if (!typeof(BaseEntity).IsAssignableFrom(clrType))
+                continue;
+
+            // e =>
+            var parameter = Expression.Parameter(clrType, "e");
+
+            // e.IsDeleted
+            var property = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+
+            // e.IsDeleted == false
+            var condition = Expression.Equal(property, Expression.Constant(false));
+
+            // e => e.IsDeleted == false
+            var lambda = Expression.Lambda(condition, parameter);
+
+            modelBuilder.Entity(clrType).HasQueryFilter(lambda);
+        }
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Queries\BrandQueryService.cs
+==================================================
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.UseCases.Brands;
+using ECommerce.UseCases.Brands.Dtos;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerce.Infrastructure.Persistence.Queries;
+
+public sealed class BrandQueryService(StoreDbContext dbContext) : IBrandQueryService
+{
+    public async Task<IReadOnlyList<GetAllBrandsResponse>> GetAllBrandsAsync(CancellationToken cancellationToken)
+    {
+        return await dbContext.Brands
+            .AsNoTracking()
+            .ProjectToType<GetAllBrandsResponse>()
+            .ToListAsync(cancellationToken);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Queries\ProductQueryService.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.UseCases.Prdoucts;
+using ECommerce.UseCases.Prdoucts.Dtos;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerce.Infrastructure.Persistence.Queries;
+
+public class ProductQueryService(StoreDbContext dbContext) : IProductQueryService
+{
+    public async Task<IReadOnlyList<GetAllProductsResponse>> GetAllProductsAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Products
+            .AsNoTracking()
+            .ProjectToType<GetAllProductsResponse>()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<GetByIdProductResponse?> GetByIdProductAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Products
+            .AsNoTracking()
+            .ProjectToType<GetByIdProductResponse>()
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    }
+}
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Queries\TypeQueryService.cs
+==================================================
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.UseCases.Types;
+using ECommerce.UseCases.Types.Dtos;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerce.Infrastructure.Persistence.Queries;
+
+public sealed class TypeQueryService(StoreDbContext dbContext) : ITypeQueryService
+{
+    public async Task<IReadOnlyList<GetAllTypesResponse>> GetAllTypesAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Types
+            .AsNoTracking()
+            .ProjectToType<GetAllTypesResponse>()
+            .ToListAsync(cancellationToken);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\Data\Models\ProductBrandSeedModel.cs
+==================================================
+namespace ECommerce.Infrastructure.Persistence.Seeding.Data.Models;
+
+public record ProductBrandSeedModel(Guid Id, string Name);
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\Data\Models\ProductTypeSeedModel.cs
+==================================================
+namespace ECommerce.Infrastructure.Persistence.Seeding.Data.Models;
+
+public record ProductTypeSeedModel(Guid Id, string Name);
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\DataBaseSeeder.cs
+==================================================
+using ECommerce.Infrastructure.Persistence.DbContexts;
+
+namespace ECommerce.Infrastructure.Persistence.Seeding;
+
+public sealed class DataBaseSeeder(StoreDbContext dbContext,
+    IEnumerable<IDataseeder> seeders)
+{
+    public async Task SeedAll(CancellationToken ct = default)
+    {
+        foreach (var seeder in seeders.OrderBy(s => s.Order))
+        {
+            await seeder.SeedAsync(ct);
+            await dbContext.SaveChangesAsync(ct);
+        }
+    }
+}
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\IDataseeder.cs
+==================================================
+namespace ECommerce.Infrastructure.Persistence.Seeding;
+
+public interface IDataseeder
+{
+    int Order { get; }
+    Task SeedAsync(CancellationToken ct = default);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\JsonSeeder.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+namespace ECommerce.Infrastructure.Persistence.Seeding;
+
+public static class JsonSeeder
+{
+    private static readonly JsonSerializerOptions options = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
+
+    public static async Task SeedIfEmpty<TEntity, TModel>(
+        DbSet<TEntity> dbset,
+        string fileName,
+        Func<TModel, Result<TEntity>> map,
+        CancellationToken ct = default
+        ) where TEntity : BaseEntity
+    {
+        if (await dbset.AnyAsync(ct))
+            return;
+
+        var filePath = Path.Combine(AppContext.BaseDirectory, "Persistence", "Seeding", "Data", fileName);
+
+        if (!File.Exists(filePath)) return;
+
+        await using var stream = File.OpenRead(filePath);
+
+        var models = await JsonSerializer.DeserializeAsync<List<TModel>>(stream, options, ct);
+
+        if (models is null || models.Count == 0) return;
+
+        var entities = new List<TEntity>();
+
+        foreach (var model in models)
+        {
+            var result = map(model);
+
+            if (result.IsFailure)
+            {
+                throw new InvalidOperationException(
+                     $"Invalid record '{model}' in '{fileName}'. Error: {result.Error!.Message}");
+            }
+
+            entities.Add(result.Value);
+        }
+
+        await dbset.AddRangeAsync(entities, ct);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\ProductBrandSeeder.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Seeding.Data.Models;
+
+namespace ECommerce.Infrastructure.Persistence.Seeding;
+
+public class ProductBrandSeeder(StoreDbContext dbContext) : IDataseeder
+{
+    public int Order => 1;
+
+    public async Task SeedAsync(CancellationToken ct = default)
+        => await JsonSeeder.SeedIfEmpty<ProductBrand, ProductBrandSeedModel>
+            (dbContext.Brands, "Brands.json", b => ProductBrand.Create(b.Id, b.Name), ct);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Persistence\Seeding\ProductTypeSeeder.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Seeding.Data.Models;
+
+namespace ECommerce.Infrastructure.Persistence.Seeding;
+
+public class ProductTypeSeeder(StoreDbContext dbContext) : IDataseeder
+{
+    public int Order => 2;
+
+    public async Task SeedAsync(CancellationToken ct = default)
+        => await JsonSeeder.SeedIfEmpty<ProductType, ProductTypeSeedModel>
+            (dbContext.Types, "Types.json", b => ProductType.Create(b.Id, b.Name), ct);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Repositories\Repository.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.Domain.Repositories;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using Microsoft.EntityFrameworkCore;
+
+namespace ECommerce.Infrastructure.Repositories;
+
+public sealed class Repository<T>(StoreDbContext dbContext)
+    : IRepository<T> where T : BaseEntity
+{
+    private readonly DbSet<T> _dbSet = dbContext.Set<T>();
+
+    public async Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        => await _dbSet.FirstOrDefaultAsync(x => x.Id == id, ct);
+
+    public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default)
+    {
+        return await _dbSet.ToListAsync(ct);
+    }
+
+    public void Add(T entity)
+    {
+        _dbSet.Add(entity);
+    }
+
+    public void Update(T entity)
+    {
+        _dbSet.Update(entity);
+    }
+
+    public void Delete(T entity) => entity.MarkAsDeleted();
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\Repositories\UnitOfWork.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.Domain.Repositories;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using System.Collections.Concurrent;
+
+namespace ECommerce.Infrastructure.Repositories;
+
+//why unit of work??? you tell me what repo u want, and i return it to you
+public class UnitOfWork(StoreDbContext dbContext) : IUnitOfWork
+{
+    //type(product)=>Irepo<product>
+
+    private readonly ConcurrentDictionary<Type, object> _repos = new();
+    public IRepository<T> Repository<T>() where T : BaseEntity
+    {
+        var type = typeof(T);
+        if (_repos.TryGetValue(type, out var repo))
+            return (IRepository<T>)repo;
+
+        var newRepo = new Repository<T>(dbContext);
+
+        _repos.TryAdd(type, newRepo);
+
+        return newRepo;
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+        => dbContext.SaveChangesAsync(ct);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.Infrastructure\DependencyInjection.cs
+==================================================
+using ECommerce.Infrastructure.Interceptors;
+using ECommerce.Infrastructure.Persistence.DbContexts;
+using ECommerce.Infrastructure.Persistence.Queries;
+using ECommerce.Infrastructure.Persistence.Seeding;
+using ECommerce.UseCases.Brands;
+using ECommerce.UseCases.Prdoucts;
+using ECommerce.UseCases.Types;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+namespace ECommerce.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services,
+        IConfiguration config,
+        IHostEnvironment environment)
+    {
+        services.AddDbContext<StoreDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(config.GetConnectionString("DefaultConnection"))
+                    .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
+
+            if (environment.IsDevelopment())
+            {
+                options.EnableSensitiveDataLogging();
+            }
+        });
+        services.AddScoped<IDataseeder, ProductBrandSeeder>();
+        services.AddScoped<IDataseeder, ProductTypeSeeder>();
+        //Since (IEnumerable<IDataseeder>seeders)
+        //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
+        services.AddScoped<DataBaseSeeder>();
+        services.AddScoped<AuditInterceptor>();
+        services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddScoped<IBrandQueryService, BrandQueryService>();
+        services.AddScoped<ITypeQueryService, TypeQueryService>();
+        return services;
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Brands\Dtos\GetAllBrandsResponse.cs
+==================================================
+namespace ECommerce.UseCases.Brands.Dtos;
+
+public record GetAllBrandsResponse(
+    Guid Id,
+    string Name);
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Brands\Queries\GetAllBrandsQuery.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.UseCases.Brands.Dtos;
+
+namespace ECommerce.UseCases.Brands.Queries;
+
+public sealed class GetAllBrandsQuery(IBrandQueryService brandQueryService)
+{
+    public async Task<Result<IReadOnlyList<GetAllBrandsResponse>>> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        var brands = await brandQueryService.GetAllBrandsAsync(cancellationToken);
+        return Result<IReadOnlyList<GetAllBrandsResponse>>.Success(brands);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Brands\IBrandQueryService.cs
+==================================================
+using ECommerce.UseCases.Brands.Dtos;
+
+namespace ECommerce.UseCases.Brands;
+
+public interface IBrandQueryService
+{
+    Task<IReadOnlyList<GetAllBrandsResponse>> GetAllBrandsAsync(CancellationToken cancellationToken = default);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Prdoucts\Dtos\GetAllProductsResponse.cs
+==================================================
+namespace ECommerce.UseCases.Prdoucts.Dtos;
+
+public record GetAllProductsResponse(
+    Guid Id,
+    string Name,
+    string Description,
+    decimal Price,
+    string PictureUrl,
+    string ProductType,
+    string ProductBrand
+);
+
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Prdoucts\Dtos\GetByIdProductResponse.cs
+==================================================
+namespace ECommerce.UseCases.Prdoucts.Dtos;
+
+public record GetByIdProductResponse(
+    Guid Id,
+    string Name,
+    string Description,
+    decimal Price,
+    string PictureUrl,
+    string ProductType,
+    string ProductBrand
+);
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Prdoucts\Queries\GetAllProductsQuery.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.UseCases.Prdoucts.Dtos;
+
+namespace ECommerce.UseCases.Prdoucts.Queries;
+
+public sealed class GetAllProductsQuery(IProductQueryService productQueryService)
+{
+    public async Task<Result<IReadOnlyList<GetAllProductsResponse>>> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var products = await productQueryService.GetAllProductsAsync(cancellationToken);
+        return Result<IReadOnlyList<GetAllProductsResponse>>.Success(products);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Prdoucts\Queries\GetByIdProductQuery.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.UseCases.Prdoucts.Dtos;
+
+namespace ECommerce.UseCases.Prdoucts.Queries;
+
+public sealed class GetByIdProductQuery(IProductQueryService productQueryservice)
+{
+    public async Task<Result<GetByIdProductResponse>> ExecuteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var product = await productQueryservice.GetByIdProductAsync(id, cancellationToken);
+
+        if (product is null)
+            return Result<GetByIdProductResponse>.Failure(ProductErrors.NotFound);
+
+        return product;
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Prdoucts\IProductQueryService.cs
+==================================================
+using ECommerce.UseCases.Prdoucts.Dtos;
+
+namespace ECommerce.UseCases.Prdoucts;
+
+public interface IProductQueryService
+{
+    Task<IReadOnlyList<GetAllProductsResponse>> GetAllProductsAsync(CancellationToken cancellationToken = default);
+    Task<GetByIdProductResponse?> GetByIdProductAsync(Guid id, CancellationToken cancellationToken = default);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Types\Dtos\GetAllTypesResponse.cs
+==================================================
+namespace ECommerce.UseCases.Types.Dtos;
+
+public record GetAllTypesResponse(
+    Guid Id,
+    String Name);
+
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Types\Queries\GetAllTypesQuery.cs
+==================================================
+using ECommerce.Domain.Common;
+using ECommerce.UseCases.Types.Dtos;
+
+namespace ECommerce.UseCases.Types.Queries;
+
+public class GetAllTypesQuery(ITypeQueryService typeQueryService)
+{
+    public async Task<Result<IReadOnlyList<GetAllTypesResponse>>> ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        var types = await typeQueryService.GetAllTypesAsync(cancellationToken);
+        return Result<IReadOnlyList<GetAllTypesResponse>>.Success(types);
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\Types\ITypeQueryService.cs
+==================================================
+using ECommerce.UseCases.Types.Dtos;
+
+namespace ECommerce.UseCases.Types;
+
+public interface ITypeQueryService
+{
+    Task<IReadOnlyList<GetAllTypesResponse>> GetAllTypesAsync(CancellationToken cancellationToken = default);
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\DependencyInjection.cs
+==================================================
+using ECommerce.UseCases.Brands.Queries;
+using ECommerce.UseCases.Prdoucts.Queries;
+using ECommerce.UseCases.Types.Queries;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace ECommerce.UseCases;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        services.AddScoped<GetByIdProductQuery>();
+        services.AddScoped<GetAllProductsQuery>();
+        services.AddScoped<GetAllBrandsQuery>();
+        services.AddScoped<GetAllTypesQuery>();
+        return services;
+    }
+}
+
+
+==================================================
+FILE: S:\DotNet\API\ECommerceAPI\ECommerce.UseCases\MappingConfiguration.cs
+==================================================
+using ECommerce.Domain.Entities;
+using ECommerce.UseCases.Prdoucts.Dtos;
+using Mapster;
+
+namespace ECommerce.UseCases;
+
+public class MappingConfiguration : IRegister
+{
+    public void Register(TypeAdapterConfig config)
+    {
+        config.NewConfig<Product, GetAllProductsResponse>()
+            .Map(dest => dest.ProductBrand, src => src.ProductBrand.Name)
+            .Map(dest => dest.ProductType, src => src.ProductType.Name);
+
+        config.NewConfig<Product, GetByIdProductResponse>()
+            .Map(dest => dest.ProductBrand, src => src.ProductBrand.Name)
+            .Map(dest => dest.ProductType, src => src.ProductType.Name);
+    }
+}
