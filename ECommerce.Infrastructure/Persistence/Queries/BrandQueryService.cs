@@ -8,7 +8,7 @@ namespace ECommerce.Infrastructure.Persistence.Queries;
 
 public sealed class BrandQueryService(StoreDbContext dbContext) : IBrandQueryService
 {
-    public async Task<IReadOnlyList<GetAllBrandsResponse>> GetAllBrandsAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<GetAllBrandsResponse>> GetAllBrandsAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Brands
             .AsNoTracking()
