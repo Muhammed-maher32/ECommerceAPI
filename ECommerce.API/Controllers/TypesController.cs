@@ -1,4 +1,5 @@
-﻿using ECommerce.UseCases.Types.Dtos;
+﻿using ECommerce.API.Models;
+using ECommerce.UseCases.Types.Dtos;
 using ECommerce.UseCases.Types.Queries.GetAllTypes;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -9,9 +10,16 @@ public class TypesController(IMediator mediator) : ApiControllerBase
 {
     // GET: api/types
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<GetAllTypesResponse>>> GetAll(CancellationToken ct = default)
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<GetAllTypesResponse>>),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<GetAllTypesResponse>>>> GetAll(CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetAllTypesQuery(), ct);
-        return Ok(result.Value);
+        return FromResult(result);
+
     }
 }

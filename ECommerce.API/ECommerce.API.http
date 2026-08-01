@@ -1,6 +1,27 @@
-@ECommerce.API_HostAddress = http://localhost:5254
+@host = http://localhost:5254/api
+@version = v1
+@baseUrl = {{host}}/{{version}}
 
-GET {{ECommerce.API_HostAddress}}/weatherforecast/
+### 1. Get All Products
+GET {{baseUrl}}/products
+Accept: application/json
+
+###
+
+### 2. Get Product By Id
+GET {{baseUrl}}/products/019fbc77-ce05-78dd-b0de-3d2eb8de80af
+Accept: application/json
+
+###
+
+### 3. Get All Brands
+GET {{baseUrl}}/brands
+Accept: application/json
+
+###
+
+### 4. Get All Types
+GET {{baseUrl}}/types
 Accept: application/json
 
 ###

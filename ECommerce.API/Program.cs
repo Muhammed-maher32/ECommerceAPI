@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddPresentaion();
+builder.Services.AddPresentation();
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApplication();
 
@@ -18,6 +18,9 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwagger(); //runs middlware to make the openapi doc available to use.
+    app.UseSwaggerUI();
+
     await using var scope = app.Services.CreateAsyncScope();
 
     var dbseed = scope.ServiceProvider.GetRequiredService<DataBaseSeeder>();
