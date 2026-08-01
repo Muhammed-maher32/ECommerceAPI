@@ -2,6 +2,7 @@
 using ECommerce.API.Models;
 using ECommerce.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ECommerce.API.Controllers;
 
@@ -25,6 +26,8 @@ public class ApiControllerBase : ControllerBase
     }
     protected ActionResult Problem(Result result)
     {
+        var error = result.Error!;
+
         var statusCode = result.Error!.Type switch
         {
             ErrorType.NotFound => StatusCodes.Status404NotFound,
@@ -47,10 +50,16 @@ public class ApiControllerBase : ControllerBase
             _ => "Internal Server Error"
         };
 
-        return base.Problem(
-            title: title,
-            detail: result.Error.Message,
-            statusCode: statusCode
-        );
+        var problem = new ProblemDetails
+        {
+            Title = title,
+            Detail = error.Message,
+            Status = statusCode
+        };
+
+        problem.Extensions["code"] = error.Code;
+        problem.Extensions["traceId"] = HttpContext.TraceIdentifier;
+
+        return StatusCode(statusCode, problem);
     }
 }
