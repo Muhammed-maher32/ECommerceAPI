@@ -30,6 +30,7 @@ public static class DependencyInjection
         });
         services.AddScoped<IDataseeder, ProductBrandSeeder>();
         services.AddScoped<IDataseeder, ProductTypeSeeder>();
+        services.AddScoped<IDataseeder, ProductSeeder>();
         //Since (IEnumerable<IDataseeder>seeders)
         //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
         services.AddScoped<DataBaseSeeder>();

@@ -1,7 +1,6 @@
-﻿using ECommerce.UseCases.Brands.Queries;
-using ECommerce.UseCases.Prdoucts.Queries;
-using ECommerce.UseCases.Types.Queries;
+﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace ECommerce.UseCases;
 
@@ -9,10 +8,13 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<GetByIdProductQuery>();
-        services.AddScoped<GetAllProductsQuery>();
-        services.AddScoped<GetAllBrandsQuery>();
-        services.AddScoped<GetAllTypesQuery>();
+        var assembly = Assembly.GetExecutingAssembly();
+
+        var config = TypeAdapterConfig.GlobalSettings;
+        config.Scan(assembly);
+
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+
         return services;
     }
 }

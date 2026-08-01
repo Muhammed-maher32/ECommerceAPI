@@ -28,4 +28,7 @@ if (app.Environment.IsDevelopment())
 
     await dbseed.SeedAll();
 }
+
+app.MapControllers();
+
 app.Run();
