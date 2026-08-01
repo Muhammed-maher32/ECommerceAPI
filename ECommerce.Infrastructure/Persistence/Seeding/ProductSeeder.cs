@@ -18,6 +18,6 @@ public class ProductSeeder(StoreDbContext dbContext) : IDataseeder
                 p.PictureUrl,
                 p.Price,
                 p.ProductBrandId,
-                p.ProductTypeId).Value,
+                p.ProductTypeId),
             ct);
 }

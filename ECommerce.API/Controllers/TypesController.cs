@@ -12,7 +12,6 @@ public class TypesController(IMediator mediator) : ApiControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<GetAllTypesResponse>>),
         StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
