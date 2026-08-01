@@ -21,8 +21,9 @@ public class ProductQueryService(StoreDbContext dbContext) : IProductQueryServic
     {
         return await dbContext.Products
             .AsNoTracking()
+            .Where(p => p.Id == id)
             .ProjectToType<GetByIdProductResponse>()
-            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
 
