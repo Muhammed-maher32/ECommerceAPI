@@ -1,4 +1,5 @@
-﻿using ECommerce.UseCases.Brands.Dtos;
+﻿using ECommerce.API.Models;
+using ECommerce.UseCases.Brands.Dtos;
 using ECommerce.UseCases.Brands.Queries.GetAllBrands;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -9,9 +10,14 @@ public class BrandsController(IMediator mediator) : ApiControllerBase
 {
     // GET: api/brands
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<GetAllBrandsResponse>>> GetAll(CancellationToken ct = default)
+    [ProducesResponseType(typeof(ApiResponse<IReadOnlyList<GetAllBrandsResponse>>),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<GetAllBrandsResponse>>>> GetAll(CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetAllBrandsQuery(), ct);
-        return Ok(result.Value);
+        return FromResult(result);
     }
 }
