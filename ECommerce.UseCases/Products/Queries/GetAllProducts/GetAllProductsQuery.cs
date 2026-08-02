@@ -1,8 +1,8 @@
 ﻿using ECommerce.Domain.Common;
-using ECommerce.UseCases.Prdoucts.Dtos;
+using ECommerce.UseCases.Products.Dtos;
 using MediatR;
 
-namespace ECommerce.UseCases.Prdoucts.Queries.GetAllProducts;
+namespace ECommerce.UseCases.Products.Queries.GetAllProducts;
 
 public record GetAllProductsQuery() : IRequest<Result<IReadOnlyList<GetAllProductsResponse>>>;
 

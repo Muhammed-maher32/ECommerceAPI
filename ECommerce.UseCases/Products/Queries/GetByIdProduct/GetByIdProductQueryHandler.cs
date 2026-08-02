@@ -1,8 +1,9 @@
 ﻿using ECommerce.Domain.Common;
-using ECommerce.UseCases.Prdoucts.Dtos;
+using ECommerce.UseCases.Products;
+using ECommerce.UseCases.Products.Dtos;
 using MediatR;
 
-namespace ECommerce.UseCases.Prdoucts.Queries.GetByIdProduct;
+namespace ECommerce.UseCases.Products.Queries.GetByIdProduct;
 
 public class GetByIdProductQueryHandler(IProductQueryService productQueryService) :
     IRequestHandler<GetByIdProductQuery, Result<GetByIdProductResponse>>

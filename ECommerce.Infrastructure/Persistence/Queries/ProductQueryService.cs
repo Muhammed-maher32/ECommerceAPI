@@ -1,7 +1,7 @@
 ﻿using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Persistence.DbContexts;
-using ECommerce.UseCases.Prdoucts;
-using ECommerce.UseCases.Prdoucts.Dtos;
+using ECommerce.UseCases.Products;
+using ECommerce.UseCases.Products.Dtos;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 

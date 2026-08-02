@@ -1,6 +1,6 @@
-﻿namespace ECommerce.UseCases.Prdoucts.Dtos;
+﻿namespace ECommerce.UseCases.Products.Dtos;
 
-public record GetAllProductsResponse(
+public record GetByIdProductResponse(
     Guid Id,
     string Name,
     string Description,
@@ -9,5 +9,3 @@ public record GetAllProductsResponse(
     string ProductType,
     string ProductBrand
 );
-
-
