@@ -1,7 +1,7 @@
 ﻿using ECommerce.API.Models;
-using ECommerce.UseCases.Prdoucts.Dtos;
-using ECommerce.UseCases.Prdoucts.Queries.GetAllProducts;
-using ECommerce.UseCases.Prdoucts.Queries.GetByIdProduct;
+using ECommerce.UseCases.Products.Dtos;
+using ECommerce.UseCases.Products.Queries.GetAllProducts;
+using ECommerce.UseCases.Products.Queries.GetByIdProduct;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +19,9 @@ public class ProductsController(IMediator mediator) : ApiControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<GetAllProductsResponse>>>> GetAll(CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetAllProductsQuery(), ct);
-        return FromResult(result);
+        return result.IsFailure
+            ? Problem(result)
+            : Ok(ApiResponse<IReadOnlyList<GetAllProductsResponse>>.Ok(result.Value, HttpContext.TraceIdentifier));
     }
 
     //Get api/products/{id}
@@ -32,8 +34,8 @@ public class ProductsController(IMediator mediator) : ApiControllerBase
     public async Task<ActionResult<ApiResponse<GetByIdProductResponse>>> GetById(Guid id, CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetByIdProductQuery(id), ct);
-
-        return FromResult(result);
-
+        return result.IsFailure
+            ? Problem(result)
+            : Ok(ApiResponse<GetByIdProductResponse>.Ok(result.Value, HttpContext.TraceIdentifier));
     }
 }

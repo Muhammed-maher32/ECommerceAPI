@@ -18,6 +18,8 @@ public class BrandsController(IMediator mediator) : ApiControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<GetAllBrandsResponse>>>> GetAll(CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetAllBrandsQuery(), ct);
-        return FromResult(result);
+        return result.IsFailure
+            ? Problem(result)
+            : Ok(ApiResponse<IReadOnlyList<GetAllBrandsResponse>>.Ok(result.Value, HttpContext.TraceIdentifier));
     }
 }

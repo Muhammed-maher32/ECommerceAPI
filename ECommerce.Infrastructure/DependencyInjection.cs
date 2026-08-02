@@ -3,7 +3,7 @@ using ECommerce.Infrastructure.Persistence.DbContexts;
 using ECommerce.Infrastructure.Persistence.Queries;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.UseCases.Brands;
-using ECommerce.UseCases.Prdoucts;
+using ECommerce.UseCases.Products;
 using ECommerce.UseCases.Types;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,9 +28,9 @@ public static class DependencyInjection
                 options.EnableSensitiveDataLogging();
             }
         });
-        services.AddScoped<IDataseeder, ProductBrandSeeder>();
-        services.AddScoped<IDataseeder, ProductTypeSeeder>();
-        services.AddScoped<IDataseeder, ProductSeeder>();
+        services.AddScoped<IDataSeeder, ProductBrandSeeder>();
+        services.AddScoped<IDataSeeder, ProductTypeSeeder>();
+        services.AddScoped<IDataSeeder, ProductSeeder>();
         //Since (IEnumerable<IDataseeder>seeders)
         //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
         services.AddScoped<DataBaseSeeder>();

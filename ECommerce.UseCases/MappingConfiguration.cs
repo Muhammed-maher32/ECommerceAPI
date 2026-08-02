@@ -1,5 +1,5 @@
 ﻿using ECommerce.Domain.Entities;
-using ECommerce.UseCases.Prdoucts.Dtos;
+using ECommerce.UseCases.Products.Dtos;
 using Mapster;
 
 namespace ECommerce.UseCases;

@@ -1,8 +1,6 @@
 ﻿using Asp.Versioning;
-using ECommerce.API.Models;
 using ECommerce.Domain.Common;
 using Microsoft.AspNetCore.Mvc;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ECommerce.API.Controllers;
 
@@ -12,18 +10,6 @@ namespace ECommerce.API.Controllers;
 [Route("api/v{version:ApiVersion}/[controller]")]
 public class ApiControllerBase : ControllerBase
 {
-    protected ActionResult<ApiResponse<T>> Success<T>(T data, string? message = null, PaginationMeta? pagination = null)
-    {
-        return Ok(ApiResponse<T>.Ok(data, HttpContext.TraceIdentifier, message, pagination));
-    }
-
-    protected ActionResult<ApiResponse<T>> FromResult<T>(Result<T> result,
-        string? message = null, PaginationMeta? pagination = null)
-    {
-        return result.IsFailure
-            ? Problem(result)
-            : Success(result.Value, message, pagination);
-    }
     protected ActionResult Problem(Result result)
     {
         var error = result.Error!;

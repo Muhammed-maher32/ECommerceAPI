@@ -1,6 +1,6 @@
-﻿using ECommerce.UseCases.Prdoucts.Dtos;
+﻿using ECommerce.UseCases.Products.Dtos;
 
-namespace ECommerce.UseCases.Prdoucts;
+namespace ECommerce.UseCases.Products;
 
 public interface IProductQueryService
 {

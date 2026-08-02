@@ -18,7 +18,8 @@ public class TypesController(IMediator mediator) : ApiControllerBase
     public async Task<ActionResult<ApiResponse<IReadOnlyList<GetAllTypesResponse>>>> GetAll(CancellationToken ct = default)
     {
         var result = await mediator.Send(new GetAllTypesQuery(), ct);
-        return FromResult(result);
-
+        return result.IsFailure
+            ? Problem(result)
+            : Ok(ApiResponse<IReadOnlyList<GetAllTypesResponse>>.Ok(result.Value, HttpContext.TraceIdentifier));
     }
 }

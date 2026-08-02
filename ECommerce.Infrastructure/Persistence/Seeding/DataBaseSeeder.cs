@@ -3,7 +3,7 @@
 namespace ECommerce.Infrastructure.Persistence.Seeding;
 
 public sealed class DataBaseSeeder(StoreDbContext dbContext,
-    IEnumerable<IDataseeder> seeders)
+    IEnumerable<IDataSeeder> seeders)
 {
     public async Task SeedAll(CancellationToken ct = default)
     {
