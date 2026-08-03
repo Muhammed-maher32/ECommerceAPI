@@ -7,6 +7,8 @@ using ECommerce.Infrastructure.Repositories;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
+using ECommerce.Infrastructure.Services;
+using ECommerce.UseCases.Common.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +42,10 @@ public static class DependencyInjection
         services.AddScoped<IProductQueryService, ProductQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<ITypeQueryService, TypeQueryService>();
+        services.Configure<CloudinarySettings>(options =>
+            config.GetSection(CloudinarySettings.SectionName).Bind(options));
+        services.AddScoped<IPhotoService, CloudinaryPhotoService>();
+
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
