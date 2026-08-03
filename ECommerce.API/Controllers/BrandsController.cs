@@ -1,6 +1,6 @@
 ﻿using ECommerce.API.Models;
-using ECommerce.UseCases.Brands.Dtos;
-using ECommerce.UseCases.Brands.Queries.GetAllBrands;
+using ECommerce.UseCases.ProductBrands.Dtos;
+using ECommerce.UseCases.ProductBrands.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

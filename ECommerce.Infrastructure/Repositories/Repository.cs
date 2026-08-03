@@ -7,31 +7,84 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure.Repositories;
 
-public sealed class Repository<T>(StoreDbContext dbContext)
+public class Repository<T>(StoreDbContext context)
     : IRepository<T> where T : BaseEntity
 {
-    private readonly DbSet<T> _dbSet = dbContext.Set<T>();
+    protected readonly DbSet<T> _dbSet = context.Set<T>();
+
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default)
-         => await _dbSet.FirstOrDefaultAsync(x => x.Id == id, ct);
+    {
+        return await _dbSet.FindAsync([id], ct);
+    }
 
-    public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default)
-        => await _dbSet.ToListAsync(ct);
+    public async Task<T?> GetAsync(
+        ISpecification<T> specification,
+        CancellationToken ct = default)
+    {
+        return await ApplySpecification(specification)
+            .FirstOrDefaultAsync(ct);
+    }
 
-    public async Task<T?> GetAsync(ISpecification<T> spec, CancellationToken ct = default)
-        => await ApplySpecification(spec).FirstOrDefaultAsync(ct);
+    public async Task<TResult?> GetAsync<TResult>(
+        ISpecification<T, TResult> specification,
+        CancellationToken ct = default)
+    {
+        return await ApplySpecification(specification)
+            .FirstOrDefaultAsync(ct);
+    }
 
-    public async Task<IReadOnlyList<T>> ListAsync(ISpecification<T> spec, CancellationToken ct = default)
-        => await ApplySpecification(spec).ToListAsync(ct);
+    public async Task<IReadOnlyList<T>> ListAsync(
+        ISpecification<T> specification,
+        CancellationToken ct = default)
+    {
+        return await ApplySpecification(specification)
+            .ToListAsync(ct);
+    }
 
-    public async Task<int> CountAsync(ISpecification<T> spec, CancellationToken ct = default)
-        => await ApplySpecification(spec).CountAsync(ct);
+    public async Task<IReadOnlyList<TResult>> ListAsync<TResult>(
+        ISpecification<T, TResult> specification,
+        CancellationToken ct = default)
+    {
+        return await ApplySpecification(specification)
+            .ToListAsync(ct);
+    }
 
-    public void Add(T entity) => _dbSet.Add(entity);
+    public async Task<int> CountAsync(
+        ISpecification<T> specification,
+        CancellationToken ct = default)
+    {
+        return await ApplySpecification(specification)
+            .CountAsync(ct);
+    }
 
-    public void Update(T entity) => _dbSet.Update(entity);
+    public async Task AddAsync(T entity, CancellationToken ct = default)
+    {
+        await _dbSet.AddAsync(entity, ct);
+    }
 
-    public void Delete(T entity) => entity.MarkAsDeleted();
+    public void Update(T entity)
+    {
+        _dbSet.Update(entity);
+    }
 
-    private IQueryable<T> ApplySpecification(ISpecification<T> spec)
-        => SpecificationEvaluator.Default.GetQuery(_dbSet.AsQueryable(), spec);
+    public void Delete(T entity)
+    {
+        _dbSet.Remove(entity);
+    }
+
+    private IQueryable<T> ApplySpecification(
+        ISpecification<T> specification)
+    {
+        return SpecificationEvaluator.Default.GetQuery(
+            _dbSet.AsQueryable(),
+            specification);
+    }
+
+    private IQueryable<TResult> ApplySpecification<TResult>(
+        ISpecification<T, TResult> specification)
+    {
+        return SpecificationEvaluator.Default.GetQuery(
+            _dbSet.AsQueryable(),
+            specification);
+    }
 }
