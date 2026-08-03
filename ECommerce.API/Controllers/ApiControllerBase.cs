@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using ECommerce.API.Models;
 using ECommerce.Domain.Common;
 using ECommerce.Domain.Repositories;
@@ -55,12 +55,12 @@ public class ApiControllerBase : ControllerBase
         Result<PagedResult<T>> result,
         int pageNumber,
         int pageSize,
-        string succesMessage)
+        string successMessage)
         => result.IsFailure ?
         Problem(result)
         : Ok(ApiResponse<IReadOnlyList<T>>.Ok(
             result.Value.Items,
             HttpContext.TraceIdentifier,
-            succesMessage, new PaginationMeta(pageNumber,
+            successMessage, new PaginationMeta(pageNumber,
             pageSize, result.Value.TotalCount)));
 }

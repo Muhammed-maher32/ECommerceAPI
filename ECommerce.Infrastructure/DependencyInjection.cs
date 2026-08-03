@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Repositories;
 using ECommerce.Infrastructure.Interceptors;
 using ECommerce.Infrastructure.Persistence.DbContexts;
 using ECommerce.Infrastructure.Persistence.Queries;
@@ -33,8 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IDataSeeder, ProductBrandSeeder>();
         services.AddScoped<IDataSeeder, ProductTypeSeeder>();
         services.AddScoped<IDataSeeder, ProductSeeder>();
-        //Since (IEnumerable<IDataseeder>seeders)
-        //Its IEnumerable it will send em in order cuz its ienumerable not just a single object
+        // Since IEnumerable<IDataSeeder> seeders is registered,
+        // EF Core / DI resolves all seeders in order as an IEnumerable list
         services.AddScoped<DataBaseSeeder>();
         services.AddScoped<AuditInterceptor>();
         services.AddScoped<IProductQueryService, ProductQueryService>();
