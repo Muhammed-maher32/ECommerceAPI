@@ -1,6 +1,6 @@
 ﻿using ECommerce.API.Models;
-using ECommerce.UseCases.Types.Dtos;
-using ECommerce.UseCases.Types.Queries.GetAllTypes;
+using ECommerce.UseCases.ProductTypes.Dtos;
+using ECommerce.UseCases.ProductTypes.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,6 @@
-﻿using Mapster;
+﻿using ECommerce.UseCases.Products.Queries.Validators;
+using FluentValidation;
+using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -14,6 +16,8 @@ public static class DependencyInjection
         config.Scan(assembly);
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+
+        services.AddValidatorsFromAssembly(typeof(GetPagedProductQueryValidtaor).Assembly);
 
         return services;
     }
