@@ -18,7 +18,7 @@ app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); //runs middlware to make the openapi doc available to use.
+    app.UseSwagger(); // runs middleware to make the openapi doc available to use.
     app.UseSwaggerUI();
 
     await using var scope = app.Services.CreateAsyncScope();

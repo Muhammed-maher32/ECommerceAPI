@@ -1,4 +1,4 @@
-﻿using Ardalis.Specification;
+using Ardalis.Specification;
 using ECommerce.Domain.Common;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
@@ -15,20 +15,20 @@ public sealed class GetPagedProductQueryHandler(IRepository<Product> repository)
     {
         var countSpec = new ProductPagedSpec
             (
-            request.search,
+            request.Search,
             request.BrandId,
             request.TypeId
             );
 
         var listSpecification = new ProductPagedSpec
             (
-            search: request.search,
+            search: request.Search,
             brandId: request.BrandId,
             typeId: request.TypeId,
             sortBy: request.SortBy,
             sortDescending: request.SortDescending,
-            pageNumber: request.pageNumber,
-            pageSize: request.pageSize
+            pageNumber: request.PageNumber,
+            pageSize: request.PageSize
             );
         // pagination
         var items = await repository.ListAsync(listSpecification, cancellationToken);

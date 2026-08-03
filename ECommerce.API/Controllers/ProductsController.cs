@@ -1,4 +1,4 @@
-﻿using ECommerce.API.Models;
+using ECommerce.API.Models;
 using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Queries;
 using MediatR;
@@ -23,7 +23,7 @@ public class ProductsController(IMediator mediator) : ApiControllerBase
 
         return result.IsFailure
             ? Problem(result)
-            : FromPagedResult(result, query.pageNumber, query.pageSize, "Paged products retrieved succefully");
+            : FromPagedResult(result, query.PageNumber, query.PageSize, "Paged products retrieved successfully");
     }
 
     //Get api/products/{id}
