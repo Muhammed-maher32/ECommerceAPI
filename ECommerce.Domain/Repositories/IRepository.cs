@@ -3,31 +3,13 @@ using ECommerce.Domain.Entities;
 
 namespace ECommerce.Domain.Repositories;
 
-public interface IRepository<T> where T : BaseEntity
+public interface IRepository<T> : IReadRepository<T> where T : BaseEntity
 {
     Task<T?> GetByIdAsync(Guid id, CancellationToken ct = default);
 
-    Task<T?> GetAsync(
-        ISpecification<T> specification,
-        CancellationToken ct = default);
+    Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default);
 
-    Task<TResult?> GetAsync<TResult>(
-        ISpecification<T, TResult> specification,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<T>> ListAsync(
-        ISpecification<T> specification,
-        CancellationToken ct = default);
-
-    Task<IReadOnlyList<TResult>> ListAsync<TResult>(
-        ISpecification<T, TResult> specification,
-        CancellationToken ct = default);
-
-    Task<int> CountAsync(
-        ISpecification<T> specification,
-        CancellationToken ct = default);
-
-    Task AddAsync(T entity, CancellationToken ct = default);
+    void Add(T entity);
 
     void Update(T entity);
 

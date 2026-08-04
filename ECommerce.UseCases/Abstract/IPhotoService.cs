@@ -1,6 +1,4 @@
-using ECommerce.UseCases.Common.Models;
-
-namespace ECommerce.UseCases.Common.Services;
+namespace ECommerce.UseCases.CloudinaryPictureService;
 
 public interface IPhotoService
 {

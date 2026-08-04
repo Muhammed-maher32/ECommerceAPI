@@ -1,8 +1,8 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using ECommerce.UseCases.Common.Services;
+using ECommerce.UseCases.CloudinaryPictureService;
 using Microsoft.Extensions.Options;
-using ModelImageUploadResult = ECommerce.UseCases.Common.Models.ImageUploadResult;
+using ModelImageUploadResult = ECommerce.UseCases.CloudinaryPictureService.ImageUploadResult;
 
 namespace ECommerce.Infrastructure.Services;
 
@@ -42,6 +42,9 @@ public class CloudinaryPhotoService : IPhotoService
 
         //upload result returns SecureUrl (ends .jpg)
         //also returns public Id
+
+        //database saves them
+
         return new ModelImageUploadResult(
             uploadResult.PublicId,
             uploadResult.SecureUrl.ToString()

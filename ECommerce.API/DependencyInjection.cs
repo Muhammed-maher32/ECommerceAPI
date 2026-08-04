@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using ECommerce.API.Middlewares;
 
 namespace ECommerce.API;
@@ -7,7 +7,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers(options =>
+        {
+            options.Filters.Add<ECommerce.API.Filters.GlobalAuditLoggingFilter>();
+        });
 
         services.AddProblemDetails();
 

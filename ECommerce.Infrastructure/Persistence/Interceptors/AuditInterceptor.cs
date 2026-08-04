@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace ECommerce.Infrastructure.Interceptors;
+namespace ECommerce.Infrastructure.Persistence.Interceptors;
 
 public class AuditInterceptor : SaveChangesInterceptor
 {

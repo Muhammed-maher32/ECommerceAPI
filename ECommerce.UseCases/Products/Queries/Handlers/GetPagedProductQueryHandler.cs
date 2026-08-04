@@ -3,11 +3,12 @@ using ECommerce.Domain.Common;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
 using ECommerce.UseCases.Products.Dtos;
+using ECommerce.UseCases.Products.Specifications.Products;
 using MediatR;
 
 namespace ECommerce.UseCases.Products.Queries.Handlers;
 
-public sealed class GetPagedProductQueryHandler(IRepository<Product> repository) :
+public sealed class GetPagedProductQueryHandler(IReadRepository<Product> repository) :
     IRequestHandler<GetPagedProductQuery, Result<PagedResult<GetAllProductsResponse>>>
 {
     public async Task<Result<PagedResult<GetAllProductsResponse>>> Handle(GetPagedProductQuery request,
