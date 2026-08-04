@@ -1,9 +1,10 @@
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace ECommerce.Infrastructure.Caching;
 
-public class HybridBasketStore(ICachedAggregateStore cacheStore) : IBasketStore
+public class HybridBasketStore(HybridCache hybridCache) : IBasketStore
 {
     private const string BasketTag = "baskets";
 
@@ -12,24 +13,24 @@ public class HybridBasketStore(ICachedAggregateStore cacheStore) : IBasketStore
     public async Task<Basket?> GetAsync(Guid buyerId, CancellationToken ct = default)
     {
         var key = GetBasketKey(buyerId);
-        return await cacheStore.GetAsync<Basket>(key, ct);
+        return await hybridCache.GetOrCreateAsync<Basket?>(
+            key,
+            _ => ValueTask.FromResult<Basket?>(null),
+            cancellationToken: ct);
     }
 
     public async Task<Basket> SaveAsync(Basket basket, CancellationToken ct = default)
     {
         var key = GetBasketKey(basket.BuyerId);
-        await cacheStore.SetAsync(key, basket, TimeSpan.FromDays(30), [BasketTag], ct);
+        await hybridCache.SetAsync(key, basket,
+            new HybridCacheEntryOptions { Expiration = TimeSpan.FromDays(30) },
+            [BasketTag], ct);
         return basket;
     }
 
     public async Task DeleteAsync(Guid buyerId, CancellationToken ct = default)
     {
         var key = GetBasketKey(buyerId);
-        await cacheStore.RemoveAsync(key, ct);
-    }
-
-    public async Task ClearAllBasketsAsync(CancellationToken ct = default)
-    {
-        await cacheStore.RemoveByTagAsync(BasketTag, ct);
+        await hybridCache.RemoveAsync(key, ct);
     }
 }

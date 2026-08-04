@@ -2,16 +2,24 @@ using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
 using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
+using ECommerce.UseCases.Products;
 using Mapster;
 using MediatR;
 
 namespace ECommerce.UseCases.Baskets.Commands.AddBasketItem;
 
-public class AddItemToBasketCommandHandler(IBasketStore basketStore) :
+public class AddItemToBasketCommandHandler(
+    IBasketStore basketStore,
+    IProductQueryService productQueryService) :
     IRequestHandler<AddItemToBasketCommand, Result<CustomerBasketResponse>>
 {
     public async Task<Result<CustomerBasketResponse>> Handle(AddItemToBasketCommand request, CancellationToken cancellationToken)
     {
+        var product = await productQueryService.GetByIdProductAsync(request.ProductId, cancellationToken);
+
+        if (product is null)
+            return Result<CustomerBasketResponse>.Failure(ProductErrors.NotFound);
+
         var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
 
         if (basket is null)
@@ -24,10 +32,10 @@ public class AddItemToBasketCommandHandler(IBasketStore basketStore) :
         }
 
         var addResult = basket.AddItem(
-            request.ProductId,
-            request.ProductName,
-            request.PictureUrl,
-            request.UnitPrice,
+            product.Id,
+            product.Name,
+            product.PictureUrl,
+            product.Price,
             request.Quantity);
 
         if (addResult.IsFailure)

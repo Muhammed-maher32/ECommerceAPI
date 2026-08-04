@@ -38,9 +38,6 @@ public class BasketsController(IMediator mediator) : ApiControllerBase
         var command = new AddItemToBasketCommand(
             buyerId,
             request.ProductId,
-            request.ProductName,
-            request.PictureUrl,
-            request.UnitPrice,
             request.Quantity);
 
         var result = await mediator.Send(command, ct);

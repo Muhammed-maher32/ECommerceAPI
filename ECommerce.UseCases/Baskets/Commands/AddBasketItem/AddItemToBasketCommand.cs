@@ -7,7 +7,4 @@ namespace ECommerce.UseCases.Baskets.Commands.AddBasketItem;
 public record AddItemToBasketCommand(
     Guid BuyerId,
     Guid ProductId,
-    string ProductName,
-    string PictureUrl,
-    decimal UnitPrice,
     int Quantity) : IRequest<Result<CustomerBasketResponse>>;
