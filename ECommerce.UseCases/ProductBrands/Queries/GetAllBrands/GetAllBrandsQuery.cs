@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.Common;
+﻿using ECommerce.Domain.Shared;
 using ECommerce.UseCases.ProductBrands.Dtos;
 using MediatR;
 

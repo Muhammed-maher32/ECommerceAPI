@@ -1,5 +1,5 @@
-﻿using ECommerce.Domain.Common;
-using ECommerce.Domain.Entities;
+﻿using ECommerce.Domain.Entities;
+using ECommerce.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 

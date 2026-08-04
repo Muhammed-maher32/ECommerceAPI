@@ -1,7 +1,10 @@
 using ECommerce.API.Models;
-using ECommerce.UseCases.Baskets.Commands;
+using ECommerce.UseCases.Baskets.Commands.AddBasketItem;
+using ECommerce.UseCases.Baskets.Commands.ClearBasket;
+using ECommerce.UseCases.Baskets.Commands.RemoveBasketItem;
+using ECommerce.UseCases.Baskets.Commands.UpdateBasketItemQuantity;
 using ECommerce.UseCases.Baskets.Dtos;
-using ECommerce.UseCases.Baskets.Queries;
+using ECommerce.UseCases.Baskets.Queries.GetBasket;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

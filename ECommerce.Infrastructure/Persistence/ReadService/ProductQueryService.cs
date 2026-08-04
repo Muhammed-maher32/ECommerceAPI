@@ -5,7 +5,7 @@ using ECommerce.UseCases.Products.Dtos;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Infrastructure.Persistence.Queries;
+namespace ECommerce.Infrastructure.Persistence.ReadService;
 
 public class ProductQueryService(StoreDbContext dbContext) : IProductQueryService
 {

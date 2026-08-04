@@ -1,4 +1,3 @@
-using ECommerce.Domain.Repositories;
 using Microsoft.Extensions.Caching.Hybrid;
 
 namespace ECommerce.Infrastructure.Caching;

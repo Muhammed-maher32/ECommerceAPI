@@ -1,8 +1,8 @@
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using ECommerce.UseCases.CloudinaryPictureService;
+using ECommerce.UseCases.Abstract;
 using Microsoft.Extensions.Options;
-using ModelImageUploadResult = ECommerce.UseCases.CloudinaryPictureService.ImageUploadResult;
+using ModelImageUploadResult = ECommerce.UseCases.Abstract.ImageUploadResult;
 
 namespace ECommerce.Infrastructure.Services;
 

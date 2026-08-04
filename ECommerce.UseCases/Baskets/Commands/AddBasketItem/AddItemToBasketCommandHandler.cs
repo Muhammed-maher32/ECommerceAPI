@@ -1,26 +1,18 @@
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
 using Mapster;
 using MediatR;
 
-namespace ECommerce.UseCases.Baskets.Commands;
+namespace ECommerce.UseCases.Baskets.Commands.AddBasketItem;
 
-public record AddItemToBasketCommand(
-    Guid BuyerId,
-    Guid ProductId,
-    string ProductName,
-    string PictureUrl,
-    decimal UnitPrice,
-    int Quantity) : IRequest<Result<CustomerBasketResponse>>;
-
-public class AddItemToBasketCommandHandler(IBasketRepository basketRepository) :
+public class AddItemToBasketCommandHandler(IBasketStore basketStore) :
     IRequestHandler<AddItemToBasketCommand, Result<CustomerBasketResponse>>
 {
     public async Task<Result<CustomerBasketResponse>> Handle(AddItemToBasketCommand request, CancellationToken cancellationToken)
     {
-        var basket = await basketRepository.GetBasketAsync(request.BuyerId, cancellationToken);
+        var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
 
         if (basket is null)
         {
@@ -41,7 +33,7 @@ public class AddItemToBasketCommandHandler(IBasketRepository basketRepository) :
         if (addResult.IsFailure)
             return Result<CustomerBasketResponse>.Failure(addResult.Error!);
 
-        await basketRepository.UpdateBasketAsync(basket, ct: cancellationToken);
+        await basketStore.SaveAsync(basket, ct: cancellationToken);
 
         return Result<CustomerBasketResponse>.Success(basket.Adapt<CustomerBasketResponse>());
     }

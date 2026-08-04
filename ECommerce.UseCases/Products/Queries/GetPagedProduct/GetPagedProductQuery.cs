@@ -1,5 +1,5 @@
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Enums;
 using MediatR;
