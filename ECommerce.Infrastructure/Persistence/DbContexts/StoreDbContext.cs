@@ -10,12 +10,13 @@ public class StoreDbContext(DbContextOptions<StoreDbContext> options)
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductBrand> Brands => Set<ProductBrand>();
     public DbSet<ProductType> Types => Set<ProductType>();
-
+    public DbSet<UserAddress> userAddresses => Set<UserAddress>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly,
+            type => (type.Namespace == "ECommerce.Infrastructure.Persistence.Configurations"));
 
         ApplySoftDeleteQueryFilter(modelBuilder);
     }

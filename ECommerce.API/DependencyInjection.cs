@@ -1,5 +1,8 @@
 using Asp.Versioning;
 using ECommerce.API.Middlewares;
+using ECommerce.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace ECommerce.API;
 
@@ -31,6 +34,17 @@ public static class DependencyInjection
         });
 
         services.AddSwaggerGen(); //Generate OpenAPI file
+
+        services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+        {
+            options.Password.RequiredLength = 8;
+
+            options.User.RequireUniqueEmail = true;
+
+            options.SignIn.RequireConfirmedEmail = true;
+        })
+            .AddEntityFrameworkStores<IdentityStoreDbContext>()
+            .AddDefaultTokenProviders(); // For Reset Password.
 
         return services;
     }

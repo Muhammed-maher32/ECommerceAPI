@@ -1,15 +1,14 @@
 namespace ECommerce.Infrastructure.Caching;
 
-public interface ICachedAggregateStore
+public interface ICachedAggregateStore<T> where T : class
 {
-    Task<T> GetOrCreateAsync<T>(
-        string key,
-        Func<CancellationToken, ValueTask<T>> factory,
-        TimeSpan? expiration = null,
-        IReadOnlyCollection<string>? tags = null,
-        CancellationToken ct = default);
+    Task<T?> GetAsync(string key, CancellationToken cancellationToken);
+
+    Task<T> GetOrCreateAsync(string key,
+        Func<CancellationToken, Task<T>> factory,
+        CancellationToken cancellationToken = default);
+
+    Task SetAsync(string key, T value, CancellationToken cancellationToken = default);
 
     Task RemoveAsync(string key, CancellationToken ct = default);
-
-    Task RemoveByTagAsync(string tag, CancellationToken ct = default);
 }
