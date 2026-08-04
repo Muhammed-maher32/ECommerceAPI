@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.Errors;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Shared;
 using System.Text.Json.Serialization;
 
@@ -38,14 +38,13 @@ public class Basket
 
 
 
-    public Result AddItem(Guid productId, string productName, string pictureUrl,
-        decimal unitPrice, int quantity)
+    public Result AddItem(Guid productId, string productName,
+        string pictureUrl, decimal unitPrice, int quantity)
     {
         var existingItem = Items.FirstOrDefault(item => item.ProductId == productId);
 
         if (existingItem is not null)
             return existingItem.IncreaseQuantity(quantity);
-
 
         var createResult = BasketItem.Create(productId, productName, pictureUrl, unitPrice, quantity);
 

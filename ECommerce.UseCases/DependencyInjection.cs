@@ -15,7 +15,11 @@ public static class DependencyInjection
         var config = TypeAdapterConfig.GlobalSettings;
         config.Scan(assembly);
 
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(assembly);
+            cfg.AddOpenBehavior(typeof(Abstract.Behaviors.ValidationBehavior<,>));
+        });
 
         services.AddValidatorsFromAssembly(typeof(GetPagedProductQueryValidator).Assembly);
 

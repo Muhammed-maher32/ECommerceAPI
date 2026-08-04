@@ -73,7 +73,7 @@ public class BasketItem
 
     public Result SetQuantity(int quantity)
     {
-        if (quantity <= MinQuantity || quantity > MaxQuantity)
+        if (quantity < MinQuantity || quantity > MaxQuantity)
             return Result.Failure(BasketErrors.InvalidQuantity);
 
         Quantity = quantity;
@@ -84,7 +84,7 @@ public class BasketItem
     public Result UpdateUnitPrice(decimal unitPrice)
     {
         if (unitPrice < 0)
-            Result.Failure(BasketErrors.InvalidUnitPrice);
+            return Result.Failure(BasketErrors.InvalidUnitPrice);
 
         UnitPrice = unitPrice;
 

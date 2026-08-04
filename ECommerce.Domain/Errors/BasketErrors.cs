@@ -1,4 +1,4 @@
-﻿namespace ECommerce.Domain.Errors;
+namespace ECommerce.Domain.Errors;
 
 public class BasketErrors
 {
@@ -71,4 +71,9 @@ public class BasketErrors
         Error.Validation(
             "Basket.AnonymousBuyerRequired",
             "Anonymous buyer id is required for merge.");
+
+    public static readonly Error BasketNotFound =
+        Error.NotFound(
+            "Basket.NotFound",
+            "No basket was found for this buyer.");
 }

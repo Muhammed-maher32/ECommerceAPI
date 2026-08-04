@@ -4,22 +4,21 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerce.Infrastructure.Persistence.Configurations;
 
-public class ProductConfiguration
-    : IEntityTypeConfiguration<Product>
+public class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     public void Configure(EntityTypeBuilder<Product> builder)
     {
         builder.Property(x => x.Name)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(Product.MaxNameLength);
 
         builder.Property(x => x.Description)
             .IsRequired()
-            .HasMaxLength(500);
+            .HasMaxLength(Product.MaxDescriptionLength);
 
         builder.Property(x => x.PictureUrl)
             .IsRequired()
-            .HasMaxLength(500);
+            .HasMaxLength(Product.MaxPictureUrlLength);
 
         builder.Property(x => x.Price)
             .HasPrecision(18, 2);
@@ -34,9 +33,7 @@ public class ProductConfiguration
             .HasForeignKey(x => x.ProductTypeId)
             .OnDelete(DeleteBehavior.NoAction);
 
-        //if i search with name || description || Price
         builder.HasIndex(x => x.Name);
-        builder.HasIndex(x => x.Description);
         builder.HasIndex(x => x.Price);
     }
 }

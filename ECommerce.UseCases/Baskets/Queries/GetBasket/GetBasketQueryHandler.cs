@@ -1,4 +1,4 @@
-using ECommerce.Domain.Entities;
+using ECommerce.Domain.Errors;
 using ECommerce.Domain.Repositories;
 using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
@@ -15,13 +15,7 @@ public class GetBasketQueryHandler(IBasketStore basketStore) :
         var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
 
         if (basket is null)
-        {
-            var createResult = Basket.CreateEmpty(request.BuyerId);
-            if (createResult.IsFailure)
-                return Result<CustomerBasketResponse>.Failure(createResult.Error!);
-
-            basket = createResult.Value;
-        }
+            return Result<CustomerBasketResponse>.Failure(BasketErrors.BasketNotFound);
 
         return Result<CustomerBasketResponse>.Success(basket.Adapt<CustomerBasketResponse>());
     }
