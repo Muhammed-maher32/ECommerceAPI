@@ -3,6 +3,8 @@ using ECommerce.Domain.Entities;
 using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Enums;
 
+namespace ECommerce.UseCases.Products.Specifications.Products;
+
 public sealed class ProductPagedSpec : Specification<Product, GetAllProductsResponse>
 {
     public ProductPagedSpec(
