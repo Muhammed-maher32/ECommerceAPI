@@ -1,4 +1,4 @@
-namespace ECommerce.UseCases.CloudinaryPictureService;
+namespace ECommerce.UseCases.Abstract;
 
 public interface IPhotoService
 {

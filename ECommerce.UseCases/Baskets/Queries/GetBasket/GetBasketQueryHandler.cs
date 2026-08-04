@@ -1,20 +1,18 @@
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
 using Mapster;
 using MediatR;
 
-namespace ECommerce.UseCases.Baskets.Queries;
+namespace ECommerce.UseCases.Baskets.Queries.GetBasket;
 
-public record GetBasketQuery(Guid BuyerId) : IRequest<Result<CustomerBasketResponse>>;
-
-public class GetBasketQueryHandler(IBasketRepository basketRepository) :
+public class GetBasketQueryHandler(IBasketStore basketStore) :
     IRequestHandler<GetBasketQuery, Result<CustomerBasketResponse>>
 {
     public async Task<Result<CustomerBasketResponse>> Handle(GetBasketQuery request, CancellationToken cancellationToken)
     {
-        var basket = await basketRepository.GetBasketAsync(request.BuyerId, cancellationToken);
+        var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
 
         if (basket is null)
         {

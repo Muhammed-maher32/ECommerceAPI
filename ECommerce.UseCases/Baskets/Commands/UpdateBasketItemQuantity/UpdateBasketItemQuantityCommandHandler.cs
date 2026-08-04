@@ -1,23 +1,18 @@
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Errors;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
 using Mapster;
 using MediatR;
 
-namespace ECommerce.UseCases.Baskets.Commands;
+namespace ECommerce.UseCases.Baskets.Commands.UpdateBasketItemQuantity;
 
-public record UpdateBasketItemQuantityCommand(
-    Guid BuyerId,
-    Guid ProductId,
-    int Quantity) : IRequest<Result<CustomerBasketResponse>>;
-
-public class UpdateBasketItemQuantityCommandHandler(IBasketRepository basketRepository) :
+public class UpdateBasketItemQuantityCommandHandler(IBasketStore basketStore) :
     IRequestHandler<UpdateBasketItemQuantityCommand, Result<CustomerBasketResponse>>
 {
     public async Task<Result<CustomerBasketResponse>> Handle(UpdateBasketItemQuantityCommand request, CancellationToken cancellationToken)
     {
-        var basket = await basketRepository.GetBasketAsync(request.BuyerId, cancellationToken);
+        var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
 
         if (basket is null)
             return Result<CustomerBasketResponse>.Failure(BasketErrors.ItemNotFound);
@@ -27,7 +22,7 @@ public class UpdateBasketItemQuantityCommandHandler(IBasketRepository basketRepo
         if (updateResult.IsFailure)
             return Result<CustomerBasketResponse>.Failure(updateResult.Error!);
 
-        await basketRepository.UpdateBasketAsync(basket, ct: cancellationToken);
+        await basketStore.SaveAsync(basket, ct: cancellationToken);
 
         return Result<CustomerBasketResponse>.Success(basket.Adapt<CustomerBasketResponse>());
     }

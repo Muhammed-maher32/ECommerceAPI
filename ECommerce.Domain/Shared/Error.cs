@@ -1,4 +1,4 @@
-﻿using ECommerce.Domain.Common;
+﻿using ECommerce.Domain.Shared;
 
 public sealed record Error(string Code, string Message, ErrorType Type)
 {

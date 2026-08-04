@@ -2,11 +2,9 @@ using ECommerce.Domain.Repositories;
 using ECommerce.Infrastructure.Caching;
 using ECommerce.Infrastructure.Persistence.Interceptors;
 using ECommerce.Infrastructure.Persistence.DbContexts;
-using ECommerce.Infrastructure.Persistence.Queries;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.Infrastructure.Repositories;
 using ECommerce.Infrastructure.Services;
-using ECommerce.UseCases.CloudinaryPictureService;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
@@ -14,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ECommerce.Infrastructure.Persistence.ReadService;
+using ECommerce.UseCases.Abstract;
 
 namespace ECommerce.Infrastructure;
 
@@ -49,7 +49,6 @@ public static class DependencyInjection
 
         services.AddScoped(typeof(IReadRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-        services.AddScoped<IBasketRepository, BasketRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddHybridCachingInfrastructure(config);

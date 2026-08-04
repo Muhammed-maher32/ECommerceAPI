@@ -1,5 +1,5 @@
-﻿using ECommerce.Domain.Common;
-using ECommerce.Domain.Errors;
+﻿using ECommerce.Domain.Errors;
+using ECommerce.Domain.Shared;
 
 namespace ECommerce.Domain.Entities;
 

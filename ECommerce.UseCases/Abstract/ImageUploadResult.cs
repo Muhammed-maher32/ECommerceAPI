@@ -1,3 +1,3 @@
-namespace ECommerce.UseCases.CloudinaryPictureService;
+namespace ECommerce.UseCases.Abstract;
 
 public record ImageUploadResult(string PublicId, string Url);

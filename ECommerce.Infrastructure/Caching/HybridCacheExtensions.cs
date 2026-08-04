@@ -1,4 +1,3 @@
-using ECommerce.Domain.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,7 +31,7 @@ public static class HybridCacheExtensions
         }
 
         services.AddScoped<ICachedAggregateStore, HybridCacheAggregateStore>();
-        services.AddScoped<HybridBasketStore>();
+        services.AddScoped<ECommerce.Domain.Repositories.IBasketStore, HybridBasketStore>();
 
         return services;
     }

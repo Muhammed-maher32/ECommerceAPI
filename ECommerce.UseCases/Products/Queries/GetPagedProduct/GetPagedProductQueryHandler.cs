@@ -1,7 +1,7 @@
 using Ardalis.Specification;
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Specifications.Products;
 using MediatR;

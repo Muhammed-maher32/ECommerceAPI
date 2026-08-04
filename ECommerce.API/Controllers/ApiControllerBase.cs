@@ -1,7 +1,7 @@
 using Asp.Versioning;
 using ECommerce.API.Models;
-using ECommerce.Domain.Common;
 using ECommerce.Domain.Repositories;
+using ECommerce.Domain.Shared;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerce.API.Controllers;

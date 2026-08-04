@@ -4,7 +4,7 @@ using ECommerce.UseCases.ProductTypes.Dtos;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 
-namespace ECommerce.Infrastructure.Persistence.Queries;
+namespace ECommerce.Infrastructure.Persistence.ReadService;
 
 public sealed class TypeQueryService(StoreDbContext dbContext) : ITypeQueryService
 {
