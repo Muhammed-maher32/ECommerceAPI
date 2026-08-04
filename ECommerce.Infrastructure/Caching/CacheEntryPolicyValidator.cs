@@ -1,32 +1,27 @@
+using Microsoft.Extensions.Options;
+
 namespace ECommerce.Infrastructure.Caching;
 
-public static class CacheEntryPolicyValidator
+public sealed class CacheEntryPolicyValidator : IValidateOptions<CacheEntryPolicy>
 {
-    public static void Validate(string key, CacheEntryPolicy policy)
+    public ValidateOptionsResult Validate(string? name, CacheEntryPolicy options)
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
-        }
+        var failures = new List<string>();
 
-        if (policy is null)
-        {
-            throw new ArgumentNullException(nameof(policy), "CacheEntryPolicy cannot be null.");
-        }
+        if (options.AbsoluteExpirationDays <= 0)
+            failures.Add($"{nameof(options.AbsoluteExpirationDays)} must be greater than zero.");
 
-        if (policy.Expiration.HasValue && policy.Expiration.Value <= TimeSpan.Zero)
-        {
-            throw new ArgumentException("Expiration duration must be greater than zero.", nameof(policy));
-        }
+        if (options.SlidingExpirationDays <= 0)
+            failures.Add($"{nameof(options.SlidingExpirationDays)} must be greater than zero.");
 
-        if (policy.LocalCacheExpiration.HasValue && policy.LocalCacheExpiration.Value <= TimeSpan.Zero)
-        {
-            throw new ArgumentException("Local cache expiration duration must be greater than zero.", nameof(policy));
-        }
+        if (options.LocalCacheExpirationMinutes <= 0)
+            failures.Add($"{nameof(options.LocalCacheExpirationMinutes)} must be greater than zero.");
 
-        if (policy.Expiration.HasValue && policy.LocalCacheExpiration.HasValue && policy.LocalCacheExpiration.Value > policy.Expiration.Value)
-        {
-            throw new ArgumentException("Local cache expiration cannot exceed total expiration.", nameof(policy));
-        }
+        if (options.SlidingRefreshThresholdMinutes < 0)
+            failures.Add($"{nameof(options.SlidingRefreshThresholdMinutes)} cannot be negative.");
+
+        return failures.Count > 0
+            ? ValidateOptionsResult.Fail(failures)
+            : ValidateOptionsResult.Success;
     }
 }

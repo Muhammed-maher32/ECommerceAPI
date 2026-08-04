@@ -4,33 +4,30 @@ using Microsoft.Extensions.Caching.Hybrid;
 
 namespace ECommerce.Infrastructure.Caching;
 
-public class HybridBasketStore(HybridCache hybridCache) : IBasketStore
+public sealed class HybridBasketStore(ICachedAggregateStore<Basket> store) : IBasketStore
 {
-    private const string BasketTag = "baskets";
+    public Task<Basket?> GetAsync(Guid buyerId, CancellationToken ct = default) =>
+        store.GetAsync(BuildCacheKey(buyerId), ct);
 
-    private static string GetBasketKey(Guid buyerId) => $"basket:{buyerId}";
+    public Task<Basket> GetOrCreateAsync(Guid buyerId, CancellationToken ct = default) =>
+        store.GetOrCreateAsync(
+            BuildCacheKey(buyerId),
+            async _ =>
+            {
+                var createResult = Basket.CreateEmpty(buyerId);
 
-    public async Task<Basket?> GetAsync(Guid buyerId, CancellationToken ct = default)
-    {
-        var key = GetBasketKey(buyerId);
-        return await hybridCache.GetOrCreateAsync<Basket?>(
-            key,
-            _ => ValueTask.FromResult<Basket?>(null),
-            cancellationToken: ct);
-    }
+                if (createResult.IsFailure)
+                    throw new InvalidOperationException(createResult.Error.Message);
 
-    public async Task<Basket> SaveAsync(Basket basket, CancellationToken ct = default)
-    {
-        var key = GetBasketKey(basket.BuyerId);
-        await hybridCache.SetAsync(key, basket,
-            new HybridCacheEntryOptions { Expiration = TimeSpan.FromDays(30) },
-            [BasketTag], ct);
-        return basket;
-    }
+                return createResult.Value;
+            },
+            ct);
 
-    public async Task DeleteAsync(Guid buyerId, CancellationToken ct = default)
-    {
-        var key = GetBasketKey(buyerId);
-        await hybridCache.RemoveAsync(key, ct);
-    }
+    public Task SaveAsync(Basket basket, CancellationToken ct = default) =>
+        store.SetAsync(BuildCacheKey(basket.BuyerId), basket, ct);
+
+    public Task DeleteAsync(Guid buyerId, CancellationToken ct = default) =>
+        store.RemoveAsync(BuildCacheKey(buyerId), ct);
+
+    private static string BuildCacheKey(Guid buyerId) => $"basket:{buyerId}";
 }
