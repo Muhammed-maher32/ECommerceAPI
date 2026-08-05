@@ -10,10 +10,9 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
-        services.AddControllers(options =>
-        {
-            options.Filters.Add<ECommerce.API.Filters.GlobalAuditLoggingFilter>();
-        });
+        // Minimal APIs only; Swashbuckle discovers them through the endpoint
+        // API explorer rather than the MVC one.
+        services.AddEndpointsApiExplorer();
 
         services.AddProblemDetails();
 
