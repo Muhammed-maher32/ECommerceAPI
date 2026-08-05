@@ -1,3 +1,5 @@
+using ECommerce.Domain.Shared;
+
 namespace ECommerce.Domain.Errors;
 
 public class BasketErrors

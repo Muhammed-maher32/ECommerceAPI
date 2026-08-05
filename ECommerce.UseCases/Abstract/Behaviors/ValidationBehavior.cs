@@ -30,8 +30,13 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
         if (failures.Count == 0)
             return await next(cancellationToken);
 
-        var firstFailure = failures[0];
-        var error = Error.Validation(firstFailure.ErrorCode, firstFailure.ErrorMessage);
+        // Report every failure, not just the first one, so a caller can fix the
+        // whole request in a single round trip.
+        var error = failures.Count == 1
+            ? Error.Validation(failures[0].ErrorCode, failures[0].ErrorMessage)
+            : Error.Validation(
+                string.Join("|", failures.Select(f => f.ErrorCode).Distinct()),
+                string.Join(" ", failures.Select(f => f.ErrorMessage)));
 
         // If TResponse is Result, return a Failure directly
         if (typeof(TResponse) == typeof(Result))

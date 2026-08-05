@@ -10,7 +10,7 @@ public class StoreDbContext(DbContextOptions<StoreDbContext> options)
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductBrand> Brands => Set<ProductBrand>();
     public DbSet<ProductType> Types => Set<ProductType>();
-    public DbSet<UserAddress> userAddresses => Set<UserAddress>();
+    public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

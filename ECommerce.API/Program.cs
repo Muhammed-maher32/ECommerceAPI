@@ -1,5 +1,6 @@
 using ECommerce.API;
 using ECommerce.Infrastructure;
+using ECommerce.Infrastructure.Identity;
 using ECommerce.Infrastructure.Persistence.DbContexts;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.UseCases;
@@ -27,7 +28,13 @@ if (app.Environment.IsDevelopment())
 
     var dbContext = scope.ServiceProvider.GetRequiredService<StoreDbContext>();
 
+    var identityDbContext = scope.ServiceProvider.GetRequiredService<IdentityStoreDbContext>();
+
+    // Both contexts share a database but keep separate migration histories,
+    // so each one has to be migrated before any seeder touches it.
     await dbContext.Database.MigrateAsync();
+
+    await identityDbContext.Database.MigrateAsync();
 
     await dbseed.SeedAll();
 }

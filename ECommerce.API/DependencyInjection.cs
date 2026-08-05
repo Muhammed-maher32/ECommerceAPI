@@ -22,7 +22,9 @@ public static class DependencyInjection
         services.AddApiVersioning(options =>
         {
             options.DefaultApiVersion = new ApiVersion(1, 0); // Default v1.0
-            options.AssumeDefaultVersionWhenUnspecified = true; // Use v1 if client doesn't specify
+            // Required: [ApiVersion] on ApiControllerBase is not inherited by the derived
+            // controllers, so they resolve as unversioned and only match via this default.
+            options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true; // Returns api-supported-versions in HTTP headers
             options.ApiVersionReader = new UrlSegmentApiVersionReader(); // Reads version from URL /v1/
         })

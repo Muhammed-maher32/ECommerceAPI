@@ -1,4 +1,5 @@
-﻿using ECommerce.Domain.Shared;
+﻿using ECommerce.Domain.Errors;
+using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Products.Dtos;
 using MediatR;
 

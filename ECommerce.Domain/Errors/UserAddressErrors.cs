@@ -1,4 +1,6 @@
-﻿namespace ECommerce.Domain.Errors;
+﻿using ECommerce.Domain.Shared;
+
+namespace ECommerce.Domain.Errors;
 
 public static class UserAddressErrors
 {

@@ -1,4 +1,3 @@
-using ECommerce.Domain.Errors;
 using ECommerce.Domain.Repositories;
 using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Baskets.Dtos;
@@ -12,18 +11,14 @@ public class UpdateBasketItemQuantityCommandHandler(IBasketStore basketStore) :
 {
     public async Task<Result<CustomerBasketResponse>> Handle(UpdateBasketItemQuantityCommand request, CancellationToken cancellationToken)
     {
-        var basket = await basketStore.GetAsync(request.BuyerId, cancellationToken);
+        var result = await basketStore.MutateAsync(
+            request.BuyerId,
+            basket => basket.UpdateItemQuantity(request.ProductId, request.Quantity),
+            createIfMissing: false,
+            cancellationToken);
 
-        if (basket is null)
-            return Result<CustomerBasketResponse>.Failure(BasketErrors.ItemNotFound);
-
-        var updateResult = basket.UpdateItemQuantity(request.ProductId, request.Quantity);
-
-        if (updateResult.IsFailure)
-            return Result<CustomerBasketResponse>.Failure(updateResult.Error!);
-
-        await basketStore.SaveAsync(basket, ct: cancellationToken);
-
-        return Result<CustomerBasketResponse>.Success(basket.Adapt<CustomerBasketResponse>());
+        return result.IsFailure
+            ? Result<CustomerBasketResponse>.Failure(result.Error!)
+            : Result<CustomerBasketResponse>.Success(result.Value.Adapt<CustomerBasketResponse>());
     }
 }

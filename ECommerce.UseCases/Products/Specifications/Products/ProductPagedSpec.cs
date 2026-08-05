@@ -18,11 +18,13 @@ public sealed class ProductPagedSpec : Specification<Product, GetAllProductsResp
     {
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.Trim();
+            // Lowercased on both sides so the provider emits a case-insensitive
+            // LIKE; a bare Contains maps to a case-sensitive LIKE on PostgreSQL.
+            var term = search.Trim().ToLower();
 
             Query.Where(p =>
-                p.Name.Contains(term) ||
-                p.Description.Contains(term));
+                p.Name.ToLower().Contains(term) ||
+                p.Description.ToLower().Contains(term));
         }
 
         if (brandId.HasValue)
@@ -35,21 +37,17 @@ public sealed class ProductPagedSpec : Specification<Product, GetAllProductsResp
             Query.Where(p => p.ProductTypeId == typeId.Value);
         }
 
-        if (sortBy is ProductSortField sortField)
-        {
-            ApplySort(Query, sortBy, sortDescending);
-        }
+        ApplySort(Query, sortBy, sortDescending);
+
+        Query.Select(p => new GetAllProductsResponse(p.Id,
+            p.Name, p.Description, p.Price, p.PictureUrl, p.ProductType.Name, p.ProductBrand.Name));
 
         //Pagination
-
         if (pageNumber.HasValue && pageSize.HasValue)
         {
-            var skip = (pageNumber - 1) * pageSize.Value;
-            Query.Skip(skip.Value)
-                .Take(pageSize.Value)
-                .Select(p => new GetAllProductsResponse(p.Id,
-                p.Name, p.Description, p.Price, p.PictureUrl, p.ProductType.Name, p.ProductBrand.Name));
-
+            var skip = (pageNumber.Value - 1) * pageSize.Value;
+            Query.Skip(skip)
+                .Take(pageSize.Value);
         }
     }
 

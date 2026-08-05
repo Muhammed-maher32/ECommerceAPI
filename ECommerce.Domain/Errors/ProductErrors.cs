@@ -1,4 +1,7 @@
 ﻿using ECommerce.Domain.Entities;
+using ECommerce.Domain.Shared;
+
+namespace ECommerce.Domain.Errors;
 
 public static class ProductErrors
 {

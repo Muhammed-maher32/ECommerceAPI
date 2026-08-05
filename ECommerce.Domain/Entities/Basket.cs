@@ -44,12 +44,21 @@ public class Basket
         var existingItem = Items.FirstOrDefault(item => item.ProductId == productId);
 
         if (existingItem is not null)
+        {
+            // The line was snapshotted when it was first added and the basket can outlive
+            // a price change, so re-sync against the catalogue before changing quantity.
+            var priceResult = existingItem.UpdateUnitPrice(unitPrice);
+
+            if (priceResult.IsFailure)
+                return priceResult;
+
             return existingItem.IncreaseQuantity(quantity);
+        }
 
         var createResult = BasketItem.Create(productId, productName, pictureUrl, unitPrice, quantity);
 
         if (createResult.IsFailure)
-            return Result.Failure(createResult.Error);
+            return Result.Failure(createResult.Error!);
 
         Items.Add(createResult.Value);
 

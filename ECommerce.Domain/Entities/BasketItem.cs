@@ -83,7 +83,8 @@ public class BasketItem
 
     public Result UpdateUnitPrice(decimal unitPrice)
     {
-        if (unitPrice < 0)
+        // Matches the rule enforced in Create; a zero price was previously accepted here.
+        if (unitPrice <= 0)
             return Result.Failure(BasketErrors.InvalidUnitPrice);
 
         UnitPrice = unitPrice;
