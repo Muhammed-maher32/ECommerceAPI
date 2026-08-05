@@ -26,7 +26,7 @@ public static class DependencyInjection
         services.AddDbContext<StoreDbContext>((sp, options) =>
         {
             options.UseNpgsql(config.GetConnectionString("DefaultConnection"),
-                sql => sql.MigrationsHistoryTable("__AplicationMigrationsHistory"))
+                sql => sql.MigrationsHistoryTable("__ApplicationMigrationsHistory"))
                     .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
 
             if (environment.IsDevelopment())

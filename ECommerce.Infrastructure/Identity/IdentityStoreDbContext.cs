@@ -8,11 +8,6 @@ public class IdentityStoreDbContext(DbContextOptions<IdentityStoreDbContext> opt
 {
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.ApplyConfigurationsFromAssembly(typeof(IdentityStoreDbContext).Assembly,
-            type => type.Namespace == "ECommerce.Infrastructure.Identity");
-
-
-
         base.OnModelCreating(builder);
     }
 }

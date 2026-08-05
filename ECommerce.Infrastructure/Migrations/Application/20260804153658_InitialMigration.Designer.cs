@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ECommerce.Infrastructure.Migrations.Application
 {
     [DbContext(typeof(StoreDbContext))]
-    [Migration("20260804153658_IntialMigration")]
-    partial class IntialMigration
+    [Migration("20260804153658_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

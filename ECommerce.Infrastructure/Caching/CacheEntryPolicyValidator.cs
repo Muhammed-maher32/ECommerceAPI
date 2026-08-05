@@ -6,6 +6,11 @@ public sealed class CacheEntryPolicyValidator : IValidateOptions<CacheEntryPolic
 {
     public ValidateOptionsResult Validate(string? name, CacheEntryPolicy options)
     {
+        // Only named policies are bound from configuration; the unnamed default instance
+        // is never configured, so validating it would fail on values nobody set.
+        if (string.IsNullOrEmpty(name))
+            return ValidateOptionsResult.Skip;
+
         var failures = new List<string>();
 
         if (options.AbsoluteExpirationDays <= 0)

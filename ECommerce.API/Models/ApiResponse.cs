@@ -50,7 +50,9 @@ public class PaginationMeta
         PageNumber = pageNumber;
         PageSize = pageSize;
         TotalCount = totalCount;
-        TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        TotalPages = pageSize > 0
+            ? (int)Math.Ceiling(totalCount / (double)pageSize)
+            : 0;
         HasPreviousPage = pageNumber > 1;
         HasNextPage = pageNumber < TotalPages;
     }
