@@ -1,6 +1,9 @@
+using ECommerce.UseCases.Products.Queries.GetPagedProduct;
 using FluentValidation;
 
 namespace ECommerce.UseCases.Products.Queries.Validators;
+
+//Fluent Validation
 
 public class GetPagedProductQueryValidator : AbstractValidator<GetPagedProductQuery>
 {

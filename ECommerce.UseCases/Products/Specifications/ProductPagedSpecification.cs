@@ -3,11 +3,11 @@ using ECommerce.Domain.Entities;
 using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Enums;
 
-namespace ECommerce.UseCases.Products.Specifications.Products;
+namespace ECommerce.UseCases.Products.Specifications;
 
-public sealed class ProductPagedSpec : Specification<Product, GetAllProductsResponse>
+public sealed class ProductPagedSpecification : Specification<Product, GetAllProductsResponse>
 {
-    public ProductPagedSpec(
+    public ProductPagedSpecification(
         string? search = null,
         Guid? brandId = null,
         Guid? typeId = null,

@@ -2,7 +2,7 @@
 using ECommerce.UseCases.ProductTypes.Dtos;
 using MediatR;
 
-namespace ECommerce.UseCases.ProductTypes.Queries.Handlers;
+namespace ECommerce.UseCases.ProductTypes.Queries.GetAllTypes;
 
 public class GetAllTypesQueryHandler(ITypeQueryService typeQueryService) :
     IRequestHandler<GetAllTypesQuery, Result<IReadOnlyList<GetAllTypesResponse>>>

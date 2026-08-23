@@ -2,7 +2,7 @@ using ECommerce.Domain.Shared;
 using FluentValidation;
 using MediatR;
 
-namespace ECommerce.UseCases.Abstract.Behaviors;
+namespace ECommerce.UseCases.Behaviors;
 
 public sealed class ValidationBehavior<TRequest, TResponse>(
     IEnumerable<IValidator<TRequest>> validators)
@@ -39,6 +39,7 @@ public sealed class ValidationBehavior<TRequest, TResponse>(
                 string.Join(" ", failures.Select(f => f.ErrorMessage)));
 
         // If TResponse is Result, return a Failure directly
+        //Reflection: If Result<T> use it to return failure
         if (typeof(TResponse) == typeof(Result))
             return (TResponse)(object)Result.Failure(error);
 

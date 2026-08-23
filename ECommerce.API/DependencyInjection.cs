@@ -1,14 +1,19 @@
 using Asp.Versioning;
 using ECommerce.API.Middlewares;
 using ECommerce.Infrastructure.Identity;
+using ECommerce.UseCases.Common.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace ECommerce.API;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(this IServiceCollection services,
+        IConfiguration config)
     {
         // Minimal APIs only; Swashbuckle discovers them through the endpoint
         // API explorer rather than the MVC one.
@@ -46,6 +51,44 @@ public static class DependencyInjection
         })
             .AddEntityFrameworkStores<IdentityStoreDbContext>()
             .AddDefaultTokenProviders(); // For Reset Password.
+
+
+        // Read eagerly: the validation parameters below are built once at registration
+        // time, so a missing section has to fail here rather than on the first request.
+        var jwtSettings = config.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+            ?? throw new InvalidOperationException(
+                $"The '{JwtSettings.SectionName}' configuration section is missing.");
+
+        // AddIdentity above sets the cookie schemes as the defaults; this call runs
+        // after it on purpose so bearer tokens win. Do not reorder the two.
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+
+                    ValidateLifetime = true,
+
+                    // No grace period: expiry is exact, which means the issuing and
+                    // validating clocks have to agree (they do while both are this host).
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+        services.AddAuthorization();
 
         return services;
     }

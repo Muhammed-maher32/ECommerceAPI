@@ -1,4 +1,3 @@
-using Ardalis.Specification;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
 using ECommerce.Domain.Shared;
@@ -6,7 +5,7 @@ using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Specifications.Products;
 using MediatR;
 
-namespace ECommerce.UseCases.Products.Queries.Handlers;
+namespace ECommerce.UseCases.Products.Queries.GetPagedProduct;
 
 public sealed class GetPagedProductQueryHandler(IReadRepository<Product> repository) :
     IRequestHandler<GetPagedProductQuery, Result<PagedResult<GetAllProductsResponse>>>
@@ -14,14 +13,14 @@ public sealed class GetPagedProductQueryHandler(IReadRepository<Product> reposit
     public async Task<Result<PagedResult<GetAllProductsResponse>>> Handle(GetPagedProductQuery request,
         CancellationToken cancellationToken)
     {
-        var countSpec = new ProductPagedSpec
+        var countSpec = new ProductPagedSpecification
             (
             request.Search,
             request.BrandId,
             request.TypeId
             );
 
-        var listSpecification = new ProductPagedSpec
+        var listSpecification = new ProductPagedSpecification
             (
             search: request.Search,
             brandId: request.BrandId,

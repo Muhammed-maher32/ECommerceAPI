@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddPresentation();
+builder.Services.AddPresentation(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApplication();
 
@@ -31,6 +31,12 @@ builder.Services.AddOutputCache(options =>
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+// Before UseOutputCache: the cache must never be able to serve a stored response
+// to a request whose identity has not been established yet.
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.UseOutputCache();
 
 var apiVersionSet = app.NewApiVersionSet()
@@ -42,8 +48,7 @@ app.MapProductEndpoints(apiVersionSet);
 app.MapTypeEndpoints(apiVersionSet);
 app.MapBrandEndpoints(apiVersionSet);
 //app.MapBasketEndpoints(apiVersionSet);
-//app.MapUserEndpoints(apiVersionSet);
-
+app.MapUserEndpoints(apiVersionSet);
 
 if (app.Environment.IsDevelopment())
 {
