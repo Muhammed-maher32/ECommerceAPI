@@ -3,7 +3,7 @@ using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Products.Dtos;
 using MediatR;
 
-namespace ECommerce.UseCases.Products.Queries.Handlers;
+namespace ECommerce.UseCases.Products.Queries.GetByIdProduct;
 
 public class GetByIdProductQueryHandler(IProductQueryService productQueryService) :
     IRequestHandler<GetByIdProductQuery, Result<GetByIdProductResponse>>

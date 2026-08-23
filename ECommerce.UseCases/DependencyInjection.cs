@@ -1,3 +1,4 @@
+using ECommerce.UseCases.Behaviors;
 using ECommerce.UseCases.Products.Queries.Validators;
 using FluentValidation;
 using Mapster;
@@ -18,7 +19,7 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(assembly);
-            cfg.AddOpenBehavior(typeof(Abstract.Behaviors.ValidationBehavior<,>));
+            cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
         });
 
         services.AddValidatorsFromAssembly(typeof(GetPagedProductQueryValidator).Assembly);

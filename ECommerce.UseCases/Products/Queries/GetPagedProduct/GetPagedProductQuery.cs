@@ -4,7 +4,7 @@ using ECommerce.UseCases.Products.Dtos;
 using ECommerce.UseCases.Products.Enums;
 using MediatR;
 
-namespace ECommerce.UseCases.Products.Queries;
+namespace ECommerce.UseCases.Products.Queries.GetPagedProduct;
 
 public sealed record GetPagedProductQuery(
     int PageNumber = 1,

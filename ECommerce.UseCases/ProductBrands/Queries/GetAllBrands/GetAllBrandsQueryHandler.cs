@@ -1,10 +1,8 @@
 ﻿using ECommerce.Domain.Shared;
-using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.ProductBrands.Dtos;
-using ECommerce.UseCases.ProductBrands.Queries;
 using MediatR;
 
-namespace ECommerce.UseCases.ProductBrands.Queries.Handlers;
+namespace ECommerce.UseCases.ProductBrands.Queries.GetAllBrands;
 
 public class GetAllBrandsQueryHandler(IBrandQueryService brandQueryService) :
     IRequestHandler<GetAllBrandsQuery, Result<IReadOnlyList<GetAllBrandsResponse>>>

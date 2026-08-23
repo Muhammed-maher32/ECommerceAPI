@@ -6,6 +6,8 @@ using ECommerce.Infrastructure.Persistence.Interceptors;
 using ECommerce.Infrastructure.Persistence.ReadService;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.Infrastructure.Repositories;
+using ECommerce.UseCases.Common.Interfaces;
+using ECommerce.UseCases.Common.Settings;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
@@ -14,6 +16,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System.Text;
 
 namespace ECommerce.Infrastructure;
 
@@ -64,10 +67,36 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+
+        AddJwt(services, config);
+
         AddBasketCaching(services, config);
 
-
         return services;
+    }
+
+    private static void AddJwt(IServiceCollection services, IConfiguration config)
+    {
+        services
+            .AddOptions<JwtSettings>()
+            .Bind(config.GetSection(JwtSettings.SectionName))
+            // HMAC-SHA256 rejects keys shorter than its 256-bit output, and it does so
+            // at the first signing attempt. Fail at startup instead.
+            .Validate(
+                settings => Encoding.UTF8.GetByteCount(settings.Secret ?? string.Empty) >= 32,
+                "Jwt:Secret must be at least 32 bytes long.")
+            .Validate(
+                settings => !string.IsNullOrWhiteSpace(settings.Issuer),
+                "Jwt:Issuer is required.")
+            .Validate(
+                settings => !string.IsNullOrWhiteSpace(settings.Audience),
+                "Jwt:Audience is required.")
+            .Validate(
+                settings => settings.AccessTokenExpirationMinutes > 0,
+                "Jwt:AccessTokenExpirationMinutes must be greater than zero.")
+            .ValidateOnStart();
+
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
     }
 
     private static void AddBasketCaching(IServiceCollection services, IConfiguration config)

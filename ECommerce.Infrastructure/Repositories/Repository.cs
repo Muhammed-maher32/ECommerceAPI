@@ -18,7 +18,8 @@ public class Repository<T>(StoreDbContext context)
     public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken ct = default)
         => await _dbSet.AsNoTracking().ToListAsync(ct);
 
-    public async Task<PagedResult<T>> PagedListAsync(ISpecification<T> specification, CancellationToken ct = default)
+    public async Task<PagedResult<T>> PagedListAsync(ISpecification<T> specification,
+        CancellationToken ct = default)
     {
         var totalCount = await CountAsync(specification, ct);
         var items = await ListAsync(specification, ct);

@@ -12,6 +12,7 @@ public interface IBasketStore
     /// <summary>
     /// Loads the basket, applies <paramref name="mutate"/> and saves it back as a single
     /// serialized unit, so concurrent writes to the same buyer cannot overwrite each other.
+    /// Protect from Race Condition
     /// </summary>
     Task<Result<Basket>> MutateAsync(
         Guid buyerId,
