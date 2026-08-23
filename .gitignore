@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local Docker Compose environment (contains the Postgres credentials).
+# Committed template lives in .env.example
+.env
