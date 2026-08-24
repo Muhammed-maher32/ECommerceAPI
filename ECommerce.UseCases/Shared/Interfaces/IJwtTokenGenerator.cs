@@ -1,4 +1,6 @@
-﻿namespace ECommerce.UseCases.Common.Interfaces;
+﻿using ECommerce.UseCases.Shared.Models;
+
+namespace ECommerce.UseCases.Shared.Interfaces;
 
 
 public interface IJwtTokenGenerator

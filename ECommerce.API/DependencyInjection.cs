@@ -1,11 +1,13 @@
 using Asp.Versioning;
 using ECommerce.API.Middlewares;
 using ECommerce.Infrastructure.Identity;
-using ECommerce.UseCases.Common.Settings;
+using ECommerce.UseCases.Shared.Settings;
+using ECommerce.UseCases.Users.Commands.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using System.Text;
 
 namespace ECommerce.API;
@@ -39,15 +41,41 @@ public static class DependencyInjection
             options.SubstituteApiVersionInUrl = true;
         });
 
-        services.AddSwaggerGen(); //Generate OpenAPI file
+        services.AddSwaggerGen(options =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Paste the access token only -- Swagger adds the Bearer prefix."
+            });
+
+            options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecuritySchemeReference("Bearer"),
+                    new List<string>()
+                }
+            });
+        }); //Generate OpenAPI file
 
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
         {
-            options.Password.RequiredLength = 8;
+            // Kept deliberately in sync with PasswordRules in ECommerce.UseCases. Spelled out
+            // rather than left to the Identity defaults so the two policies can be compared
+            // line for line.
+            options.Password.RequiredLength = PasswordRules.MinLength;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireDigit = true;
+            options.Password.RequireNonAlphanumeric = true;
 
             options.User.RequireUniqueEmail = true;
 
-            options.SignIn.RequireConfirmedEmail = true;
+            options.SignIn.RequireConfirmedEmail = false;
         })
             .AddEntityFrameworkStores<IdentityStoreDbContext>()
             .AddDefaultTokenProviders(); // For Reset Password.
