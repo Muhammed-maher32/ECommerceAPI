@@ -47,7 +47,7 @@ var apiVersionSet = app.NewApiVersionSet()
 app.MapProductEndpoints(apiVersionSet);
 app.MapTypeEndpoints(apiVersionSet);
 app.MapBrandEndpoints(apiVersionSet);
-//app.MapBasketEndpoints(apiVersionSet);
+app.MapBasketEndpoints(apiVersionSet);
 app.MapUserEndpoints(apiVersionSet);
 
 if (app.Environment.IsDevelopment())

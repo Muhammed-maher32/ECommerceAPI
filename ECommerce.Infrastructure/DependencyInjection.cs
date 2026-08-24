@@ -6,11 +6,11 @@ using ECommerce.Infrastructure.Persistence.Interceptors;
 using ECommerce.Infrastructure.Persistence.ReadService;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.Infrastructure.Repositories;
-using ECommerce.UseCases.Common.Interfaces;
-using ECommerce.UseCases.Common.Settings;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
+using ECommerce.UseCases.Shared.Interfaces;
+using ECommerce.UseCases.Shared.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +97,7 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IIdentityService, IdentityService>();
     }
 
     private static void AddBasketCaching(IServiceCollection services, IConfiguration config)

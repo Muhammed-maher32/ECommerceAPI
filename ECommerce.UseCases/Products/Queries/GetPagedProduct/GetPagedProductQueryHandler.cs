@@ -2,7 +2,7 @@ using ECommerce.Domain.Entities;
 using ECommerce.Domain.Repositories;
 using ECommerce.Domain.Shared;
 using ECommerce.UseCases.Products.Dtos;
-using ECommerce.UseCases.Products.Specifications.Products;
+using ECommerce.UseCases.Products.Specifications;
 using MediatR;
 
 namespace ECommerce.UseCases.Products.Queries.GetPagedProduct;

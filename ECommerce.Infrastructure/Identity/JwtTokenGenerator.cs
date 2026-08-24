@@ -1,6 +1,6 @@
-﻿using ECommerce.UseCases.Common;
-using ECommerce.UseCases.Common.Interfaces;
-using ECommerce.UseCases.Common.Settings;
+﻿using ECommerce.UseCases.Shared.Interfaces;
+using ECommerce.UseCases.Shared.Models;
+using ECommerce.UseCases.Shared.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
