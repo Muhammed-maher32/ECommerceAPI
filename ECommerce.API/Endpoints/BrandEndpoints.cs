@@ -4,7 +4,7 @@ using ECommerce.API.Extensions;
 using ECommerce.API.Filters;
 using ECommerce.API.Models;
 using ECommerce.UseCases.ProductBrands.Dtos;
-using ECommerce.UseCases.ProductBrands.Queries;
+using ECommerce.UseCases.ProductBrands.Queries.GetAllBrands;
 using MediatR;
 
 namespace ECommerce.API.Endpoints;

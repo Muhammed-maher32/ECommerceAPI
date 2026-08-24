@@ -1,4 +1,4 @@
-﻿namespace ECommerce.UseCases.Common.Settings;
+﻿namespace ECommerce.UseCases.Shared.Settings;
 
 public class JwtSettings
 {
