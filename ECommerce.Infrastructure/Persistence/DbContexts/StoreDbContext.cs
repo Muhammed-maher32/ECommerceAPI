@@ -11,6 +11,8 @@ public class StoreDbContext(DbContextOptions<StoreDbContext> options)
     public DbSet<ProductBrand> Brands => Set<ProductBrand>();
     public DbSet<ProductType> Types => Set<ProductType>();
     public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
+
+    public DbSet<DeliveryMethod> DeliveryMethods => Set<DeliveryMethod>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
