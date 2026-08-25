@@ -26,6 +26,10 @@ builder.Services.AddOutputCache(options =>
             "brandId", "typeId", "sortBy", "sortDescending");
     });
 
+    options.AddPolicy("DeliveryMethods", policy =>
+    {
+        policy.Expire(TimeSpan.FromMinutes(10));
+    });
 });
 
 var app = builder.Build();
@@ -49,6 +53,7 @@ app.MapTypeEndpoints(apiVersionSet);
 app.MapBrandEndpoints(apiVersionSet);
 app.MapBasketEndpoints(apiVersionSet);
 app.MapUserEndpoints(apiVersionSet);
+app.MapDeliveryMethodEndPoints(apiVersionSet);
 
 if (app.Environment.IsDevelopment())
 {
