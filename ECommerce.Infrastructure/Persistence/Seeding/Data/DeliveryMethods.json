@@ -1,0 +1,30 @@
+[
+  {
+    "Id": "3f1b9c20-0a5e-4b8f-9c11-7d2e4a6b0001",
+    "Name": "Express Delivery",
+    "Description": "Fastest delivery time",
+    "DeliveryTime": "1 Day",
+    "Price": 100.00
+  },
+  {
+    "Id": "6c4a7e31-2b6f-4d90-8e22-7d2e4a6b0002",
+    "Name": "Standard Delivery",
+    "Description": "Get it within 5 days",
+    "DeliveryTime": "5 Days",
+    "Price": 50.00
+  },
+  {
+    "Id": "9a2d5f42-3c7a-4e01-9f33-7d2e4a6b0003",
+    "Name": "Economy Delivery",
+    "Description": "Slower but cheap",
+    "DeliveryTime": "10 Days",
+    "Price": 25.00
+  },
+  {
+    "Id": "b5e8c153-4d8b-4f12-8a44-7d2e4a6b0004",
+    "Name": "Free Delivery",
+    "Description": "Free! You get what you pay for",
+    "DeliveryTime": "1 Week",
+    "Price": 0.00
+  }
+]

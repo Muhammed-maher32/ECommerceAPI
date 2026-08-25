@@ -6,6 +6,7 @@ using ECommerce.Infrastructure.Persistence.Interceptors;
 using ECommerce.Infrastructure.Persistence.ReadService;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.Infrastructure.Repositories;
+using ECommerce.UseCases.DeliveryMethods;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
@@ -53,6 +54,7 @@ public static class DependencyInjection
         services.AddScoped<IDataSeeder, ProductTypeSeeder>();
         services.AddScoped<IDataSeeder, ProductSeeder>();
         services.AddScoped<IDataSeeder, IdentitySeeder>();
+        services.AddScoped<IDataSeeder, DeliveryMethodSeeder>();
 
         // Since IEnumerable<IDataSeeder> seeders is registered,
         // EF Core / DI resolves all seeders in order as an IEnumerable list
@@ -61,7 +63,7 @@ public static class DependencyInjection
         services.AddScoped<IProductQueryService, ProductQueryService>();
         services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<ITypeQueryService, TypeQueryService>();
-
+        services.AddScoped<IDeliveryMethodQueryService, DeliveryMethodQueryService>();
 
         services.AddScoped(typeof(IReadRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
