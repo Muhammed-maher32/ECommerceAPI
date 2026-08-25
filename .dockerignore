@@ -1,0 +1,29 @@
+# Build output -- rebuilt inside the image anyway
+**/bin/
+**/obj/
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Version control -- .git carries the full commit history; never ship it
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# Local secrets and compose config -- must never be baked into an image
+.env
+.env.example
+docker-compose.yml
+**/appsettings.Development.json
+
+# Docs
+*.md
+LICENSE
+
+# NOTE: Persistence/Seeding/Data/*.json is NOT ignored -- that is real
+# application data and has to ship inside the image.
