@@ -7,6 +7,7 @@ using ECommerce.Infrastructure.Persistence.ReadService;
 using ECommerce.Infrastructure.Persistence.Seeding;
 using ECommerce.Infrastructure.Repositories;
 using ECommerce.UseCases.DeliveryMethods;
+using ECommerce.UseCases.Orders;
 using ECommerce.UseCases.ProductBrands;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.ProductTypes;
@@ -64,6 +65,7 @@ public static class DependencyInjection
         services.AddScoped<IBrandQueryService, BrandQueryService>();
         services.AddScoped<ITypeQueryService, TypeQueryService>();
         services.AddScoped<IDeliveryMethodQueryService, DeliveryMethodQueryService>();
+        services.AddScoped<IOrderQueryService, OrderQueryService>();
 
         services.AddScoped(typeof(IReadRepository<>), typeof(Repository<>));
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

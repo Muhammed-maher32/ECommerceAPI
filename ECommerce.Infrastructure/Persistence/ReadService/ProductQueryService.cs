@@ -1,4 +1,3 @@
-using ECommerce.Domain.Entities;
 using ECommerce.Infrastructure.Persistence.DbContexts;
 using ECommerce.UseCases.Products;
 using ECommerce.UseCases.Products.Dtos;
@@ -17,5 +16,20 @@ public class ProductQueryService(StoreDbContext dbContext) : IProductQueryServic
             .ProjectToType<GetByIdProductResponse>()
             .FirstOrDefaultAsync(cancellationToken);
     }
-}
 
+    public async Task<IReadOnlyDictionary<Guid, ProductPricingSnapshot>> GetPricingSnapshotsAsync(
+        IReadOnlyCollection<Guid> productIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (productIds.Count == 0)
+            return new Dictionary<Guid, ProductPricingSnapshot>();
+
+        // The soft-delete query filter applies here, so a delisted product simply
+        // does not come back and checkout fails loudly instead of pricing it.
+        return await dbContext.Products
+            .AsNoTracking()
+            .Where(p => productIds.Contains(p.Id))
+            .Select(p => new ProductPricingSnapshot(p.Id, p.Name, p.PictureUrl, p.Price))
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+    }
+}

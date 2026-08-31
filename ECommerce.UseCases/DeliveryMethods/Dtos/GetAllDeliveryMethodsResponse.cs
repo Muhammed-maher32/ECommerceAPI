@@ -1,6 +1,8 @@
-﻿namespace ECommerce.UseCases.DeliveryMethods.Dtos;
+namespace ECommerce.UseCases.DeliveryMethods.Dtos;
 
-public record GetAllDeliveryMethodsResponse(string Name,
+public record GetAllDeliveryMethodsResponse(
+    Guid Id,
+    string Name,
     string Description,
     string DeliveryTime,
     decimal Price);

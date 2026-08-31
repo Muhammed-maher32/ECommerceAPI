@@ -54,6 +54,7 @@ app.MapBrandEndpoints(apiVersionSet);
 app.MapBasketEndpoints(apiVersionSet);
 app.MapUserEndpoints(apiVersionSet);
 app.MapDeliveryMethodEndPoints(apiVersionSet);
+app.MapOrderEndpoints(apiVersionSet);
 
 if (app.Environment.IsDevelopment())
 {
