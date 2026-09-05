@@ -68,7 +68,15 @@ if (app.Environment.IsDevelopment())
                 description.GroupName.ToUpperInvariant());
         }
     });
+}
 
+// Production has no CI to run `dotnet ef database update`, so schema
+// deployment opts in at startup via Database:MigrateOnStartup. Migrations are
+// non-destructive and the JSON seeders are idempotent (SeedIfEmpty); seeding is
+// safe on every boot. Turn the flag off after the first deploy.
+if (app.Environment.IsDevelopment() ||
+    app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
     await using var scope = app.Services.CreateAsyncScope();
 
     var dbseed = scope.ServiceProvider.GetRequiredService<DataBaseSeeder>();

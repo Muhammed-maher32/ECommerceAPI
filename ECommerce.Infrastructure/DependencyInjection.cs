@@ -74,7 +74,7 @@ public static class DependencyInjection
 
         AddJwt(services, config);
 
-        AddBasketCaching(services, config);
+        AddBasketCaching(services, config, environment);
 
         return services;
     }
@@ -104,7 +104,8 @@ public static class DependencyInjection
         services.AddScoped<IIdentityService, IdentityService>();
     }
 
-    private static void AddBasketCaching(IServiceCollection services, IConfiguration config)
+    private static void AddBasketCaching(IServiceCollection services, IConfiguration config,
+        IHostEnvironment environment)
     {
         services
             .AddOptions<CacheEntryPolicy>("Basket")
@@ -115,6 +116,15 @@ public static class DependencyInjection
 
         var redisConnection = config.GetConnectionString("Redis")
             ?? config.GetConnectionString("redis");
+
+        if (string.IsNullOrWhiteSpace(redisConnection) && environment.IsProduction())
+        {
+            // Without Redis, baskets are stored in local HybridCache only: they are
+            // lost on every restart and never shared between instances. Baskets are
+            // the sole persistence for a purchase flow, so fail at startup instead.
+            throw new InvalidOperationException(
+                "ConnectionStrings:Redis is required in Production. Baskets are not durable without it.");
+        }
 
         if (!string.IsNullOrWhiteSpace(redisConnection))
         {

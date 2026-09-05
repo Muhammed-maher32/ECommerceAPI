@@ -58,7 +58,8 @@ public sealed class IdentitySeeder(
 
         // The account outlives the configured password, so a rotated secret would
         // otherwise never take effect. Treat configuration as the source of truth.
-        // Safe because seeding only runs in Development (see Program.cs).
+        // Seeding only runs in Development or with Database:MigrateOnStartup=true
+        // (see Program.cs), so this must not stay on after the production bootstrap.
         var resetToken = await userManager.GeneratePasswordResetTokenAsync(existing);
         var resetResult = await userManager.ResetPasswordAsync(existing, resetToken, password);
 
